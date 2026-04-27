@@ -15,18 +15,26 @@ Portal do oceniania i opiniowania kursów online/offline w modelu „IMDb / Film
 
 - Node.js ≥ 20 (testowane na 25)
 - pnpm ≥ 10 (`npm install -g pnpm`)
-- PostgreSQL (lokalnie Docker / `pnpm exec prisma dev` / Postgres.app)
+- PostgreSQL 16+ (`brew install postgresql@16 && brew services start postgresql@16`)
 
 ## Setup lokalny
 
 ```bash
+# 1. Postgres lokalnie (jednorazowo)
+brew install postgresql@16
+brew services start postgresql@16
+/opt/homebrew/opt/postgresql@16/bin/createdb coursed
+
+# 2. Projekt
 pnpm install
 cp .env.example .env
-# uzupełnij wartości w .env (DATABASE_URL, AUTH_SECRET, klucze Google + Resend)
+# DATABASE_URL: postgresql://<user>@localhost:5432/coursed?schema=public
+# uzupełnij AUTH_SECRET, klucze Google + Resend
 
-pnpm exec prisma generate           # klient Prisma → src/generated/prisma
-pnpm exec prisma migrate dev        # tworzy DB + tabele Auth.js
-pnpm dev                            # http://localhost:3000
+pnpm db:generate     # klient Prisma → src/generated/prisma
+pnpm db:migrate      # migracja schematu
+pnpm db:seed         # dane demo (5 userów, 10 kursów, kategorie, oceny)
+pnpm dev             # http://localhost:3000
 ```
 
 Wygenerowanie `AUTH_SECRET`:

@@ -1,6 +1,3 @@
-// Schemat docelowo rozbudujemy w Fazie 1 (Course, Rating, Review, Category, ...).
-// Tutaj minimalny zestaw wymagany przez Auth.js v5 + pole role.
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -10,12 +7,66 @@ datasource db {
   provider = "postgresql"
 }
 
+// ──────────────────────────────────────────────────────────────────────────
+// Enums
+// ──────────────────────────────────────────────────────────────────────────
+
 enum UserRole {
   USER
   CRITIC
   EDITOR
   ADMIN
 }
+
+enum CourseFormat {
+  ONLINE
+  OFFLINE
+  HYBRID
+}
+
+enum CourseStatus {
+  DRAFT
+  PUBLISHED
+  MERGED
+}
+
+enum CourseLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum ContentKind {
+  USER
+  CRITIC
+}
+
+enum ReviewStatus {
+  VISIBLE
+  HIDDEN
+  REMOVED
+}
+
+enum ReportStatus {
+  OPEN
+  RESOLVED
+  REJECTED
+}
+
+enum CourseRequestStatus {
+  NEW
+  ACCEPTED
+  REJECTED
+}
+
+enum BlogPostStatus {
+  DRAFT
+  PUBLISHED
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Auth.js v5
+// ──────────────────────────────────────────────────────────────────────────
 
 model User {
   id            String    @id @default(cuid())
@@ -27,8 +78,15 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts Account[]
-  sessions Session[]
+  accounts        Account[]
+  sessions        Session[]
+  ratings         Rating[]
+  reviews         Review[]
+  reviewVotes     ReviewVote[]
+  reports         Report[]
+  courseRequests  CourseRequest[]
+  blogPosts       BlogPost[]
+  auditLogs       AuditLog[]
 }
 
 model Account {
@@ -67,4 +125,194 @@ model VerificationToken {
   expires    DateTime
 
   @@id([identifier, token])
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Katalog kursów
+// ──────────────────────────────────────────────────────────────────────────
+
+model Course {
+  id               String        @id @default(cuid())
+  slug             String        @unique
+  title            String
+  coverUrl         String?
+  shortDescription String?
+  description      String?       // Markdown
+  authorName       String?
+  platformName     String?
+  officialUrl      String?
+  priceModel       String?       // np. "FREE", "PAID", "FREEMIUM", "169 PLN"
+  language         String?       // ISO: "pl", "en", ...
+  level            CourseLevel?
+  format           CourseFormat
+  lastUpdatedAt    DateTime?
+  hasCertificate   Boolean       @default(false)
+  location         String?       // dla OFFLINE/HYBRID
+  status           CourseStatus  @default(DRAFT)
+
+  // Scalanie duplikatów
+  mergedIntoId String?
+  mergedInto   Course?  @relation("CourseMerge", fields: [mergedIntoId], references: [id], onDelete: SetNull)
+  mergedFrom   Course[] @relation("CourseMerge")
+
+  // Cache agregacji ocen (zapisany przez Server Action po każdym rate/review)
+  // { overall: number|null, user: number|null, critic: number|null, counts: {user, critic}, flags: {...} }
+  cachedRatings Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  categories CourseCategory[]
+  ratings    Rating[]
+  reviews    Review[]
+
+  @@index([status])
+  @@index([format])
+  @@index([language])
+  @@index([level])
+}
+
+model Category {
+  id          String  @id @default(cuid())
+  slug        String  @unique
+  name        String
+  description String?
+  parentId    String?
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children    Category[] @relation("CategoryHierarchy")
+
+  courses CourseCategory[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CourseCategory {
+  courseId   String
+  categoryId String
+
+  course   Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([courseId, categoryId])
+  @@index([categoryId])
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Oceny i opinie
+// ──────────────────────────────────────────────────────────────────────────
+
+model Rating {
+  id        String      @id @default(cuid())
+  courseId  String
+  userId    String
+  value     Int         // 0..10
+  kind      ContentKind // USER lub CRITIC (snapshot z roli usera w momencie zapisu)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, userId])
+  @@index([courseId, kind])
+}
+
+model Review {
+  id           String       @id @default(cuid())
+  courseId     String
+  userId       String
+  body         String       // tekst opinii
+  kind         ContentKind
+  status       ReviewStatus @default(VISIBLE)
+  helpfulCount Int          @default(0)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  course  Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  votes   ReviewVote[]
+  reports Report[]
+
+  @@unique([courseId, userId])
+  @@index([courseId, status])
+}
+
+model ReviewVote {
+  reviewId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([reviewId, userId])
+}
+
+model Report {
+  id         String       @id @default(cuid())
+  reviewId   String
+  reporterId String
+  reason     String?
+  status     ReportStatus @default(OPEN)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  review   Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  reporter User   @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Pozostałe
+// ──────────────────────────────────────────────────────────────────────────
+
+model CourseRequest {
+  id             String              @id @default(cuid())
+  title          String
+  url            String?
+  submitterEmail String?
+  note           String?
+  status         CourseRequestStatus @default(NEW)
+  createdById    String?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  createdBy User? @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([status])
+}
+
+model BlogPost {
+  id          String         @id @default(cuid())
+  slug        String         @unique
+  title       String
+  excerpt     String?
+  content     String         // Markdown / MDX
+  coverUrl    String?
+  authorId    String
+  publishedAt DateTime?
+  status      BlogPostStatus @default(DRAFT)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  author User @relation(fields: [authorId], references: [id])
+
+  @@index([status, publishedAt])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String
+  action    String   // np. "course.create", "review.hide", "course.merge"
+  entity    String   // np. "Course", "Review"
+  entityId  String
+  diff      Json?
+  createdAt DateTime @default(now())
+
+  actor User @relation(fields: [actorId], references: [id], onDelete: Cascade)
+
+  @@index([entity, entityId])
+  @@index([actorId, createdAt])
 }
