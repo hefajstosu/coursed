@@ -80,6 +80,21 @@ export function CourseRequestForm({ defaultEmail }: { defaultEmail?: string }) {
         )}
       </div>
 
+      <label className="flex items-start gap-2.5 text-sm cursor-pointer select-none">
+        <input
+          type="checkbox"
+          name="isCreator"
+          disabled={pending}
+          className="mt-0.5 size-4 shrink-0 rounded border border-input bg-transparent accent-primary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
+        />
+        <span>
+          Jestem twórcą kursu
+          <span className="block text-xs text-muted-foreground mt-0.5">
+            Zaznacz, jeśli zgłaszasz własny kurs — redakcja może poprosić o weryfikację.
+          </span>
+        </span>
+      </label>
+
       {state.error && !state.fieldErrors && (
         <p className="text-sm text-destructive" aria-live="polite">
           {state.error}

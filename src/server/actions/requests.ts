@@ -33,6 +33,7 @@ export async function submitCourseRequest(
     url: formData.get("url"),
     email: formData.get("email"),
     note: formData.get("note"),
+    isCreator: formData.get("isCreator") === "on",
   });
 
   if (!parsed.success) {
@@ -62,6 +63,7 @@ export async function submitCourseRequest(
       url: parsed.data.url ?? null,
       submitterEmail: parsed.data.email ?? session?.user?.email ?? null,
       note: parsed.data.note ?? null,
+      isCreator: parsed.data.isCreator,
       createdById: session?.user?.id ?? null,
     },
   });

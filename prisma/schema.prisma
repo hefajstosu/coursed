@@ -280,6 +280,7 @@ model CourseRequest {
   url            String?
   submitterEmail String?
   note           String?
+  isCreator      Boolean             @default(false)
   status         CourseRequestStatus @default(NEW)
   createdById    String?
   createdAt      DateTime            @default(now())

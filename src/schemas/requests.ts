@@ -26,6 +26,7 @@ export const courseRequestSchema = z.object({
     .max(2000, "Notatka za długa (max 2000 znaków)")
     .optional()
     .or(z.literal("").transform(() => undefined)),
+  isCreator: z.boolean().default(false),
 });
 
 export type CourseRequestInput = z.infer<typeof courseRequestSchema>;
