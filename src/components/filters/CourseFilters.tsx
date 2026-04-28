@@ -95,12 +95,15 @@ function Filter({
   onChange: (v: string) => void;
   allowAll?: boolean;
 }) {
+  const activeLabel =
+    value === ALL ? "Wszystkie" : options.find((o) => o.value === value)?.label ?? "Wszystkie";
+
   return (
     <label className="flex flex-col gap-1 text-xs">
       <span className="text-muted-foreground">{label}</span>
       <Select value={value} onValueChange={(v) => onChange(v ?? ALL)}>
         <SelectTrigger className="w-full">
-          <SelectValue />
+          <SelectValue>{activeLabel}</SelectValue>
         </SelectTrigger>
         <SelectContent>
           {allowAll && <SelectItem value={ALL}>Wszystkie</SelectItem>}

@@ -41,4 +41,5 @@ export const LIMITS = {
   review: { limit: 10, windowMs: 60 * 60 * 1000 }, // 10/h
   vote: { limit: 60, windowMs: 60 * 60 * 1000 }, // 60/h
   report: { limit: 10, windowMs: 24 * 60 * 60 * 1000 }, // 10/dzień
+  courseRequest: { limit: 5, windowMs: 24 * 60 * 60 * 1000 }, // 5/dzień
 } as const;
