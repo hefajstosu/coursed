@@ -1,11 +1,18 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export function SiteFooter() {
   return (
     <footer className="mt-16 border-t border-border bg-muted/30">
       <div className="mx-auto max-w-6xl px-4 py-10 grid gap-6 md:grid-cols-4 text-sm">
         <div>
-          <div className="font-semibold mb-2">coursed.pl</div>
+          <Image
+            src="/logo.png"
+            alt="coursed.pl"
+            width={214}
+            height={40}
+            className="h-8 w-auto mb-3 dark:invert"
+          />
           <p className="text-muted-foreground">
             Niezależny portal opinii o kursach online i offline.
           </p>

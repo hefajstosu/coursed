@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { auth } from "@/auth";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -8,10 +9,17 @@ export async function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
         <div className="flex items-center gap-6">
-          <Link href="/" className="font-semibold tracking-tight text-lg">
-            coursed<span className="text-muted-foreground">.pl</span>
+          <Link href="/" className="flex items-center" aria-label="coursed.pl">
+            <Image
+              src="/logo.png"
+              alt="coursed.pl"
+              width={214}
+              height={40}
+              priority
+              className="h-9 w-auto dark:invert"
+            />
           </Link>
           <nav className="hidden md:flex items-center gap-5 text-sm text-muted-foreground">
             <Link href="/kursy" className="hover:text-foreground transition-colors">

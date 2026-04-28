@@ -6,12 +6,16 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { RatingDisplay } from "@/components/course/RatingDisplay";
 import { ReviewItem } from "@/components/course/ReviewItem";
+import { RatingForm } from "@/components/course/RatingForm";
+import { ReviewForm } from "@/components/course/ReviewForm";
 import {
   getCourseBySlug,
   getCourseReviews,
+  getUserCourseInteraction,
   parseCachedRatings,
 } from "@/server/queries/courses";
 import { formatLabels, levelLabels, languageLabel } from "@/lib/format";
+import { auth } from "@/auth";
 import type { ContentKind } from "@/generated/prisma/enums";
 
 type PageProps = {
@@ -58,7 +62,15 @@ export default async function CoursePage({ params, searchParams }: PageProps) {
 
   const reviewFilterRaw = typeof sp.reviews === "string" ? sp.reviews : undefined;
   const reviewKind = parseReviewFilter(reviewFilterRaw);
-  const reviews = await getCourseReviews(course.id, reviewKind);
+  const [reviews, session] = await Promise.all([
+    getCourseReviews(course.id, reviewKind),
+    auth(),
+  ]);
+
+  const isLoggedIn = !!session?.user;
+  const interaction = isLoggedIn
+    ? await getUserCourseInteraction(course.id, session.user.id)
+    : null;
 
   const ratings = parseCachedRatings(course.cachedRatings);
 
@@ -152,6 +164,12 @@ export default async function CoursePage({ params, searchParams }: PageProps) {
             </h2>
             <ReviewFilterTabs slug={slug} active={reviewFilterRaw} />
           </div>
+          <ReviewForm
+            courseId={course.id}
+            initialBody={interaction?.userReviewBody ?? null}
+            isLoggedIn={isLoggedIn}
+          />
+
           {reviews.length === 0 ? (
             <div className="rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground">
               Brak opinii spełniających wybrany filtr.
@@ -161,11 +179,14 @@ export default async function CoursePage({ params, searchParams }: PageProps) {
               {reviews.map((r) => (
                 <ReviewItem
                   key={r.id}
+                  reviewId={r.id}
                   body={r.body}
                   createdAt={r.createdAt}
                   helpfulCount={r.helpfulCount}
                   kind={r.kind}
                   user={r.user}
+                  voted={interaction?.votedReviewIds.has(r.id) ?? false}
+                  isLoggedIn={isLoggedIn}
                 />
               ))}
             </div>
@@ -175,6 +196,15 @@ export default async function CoursePage({ params, searchParams }: PageProps) {
 
       <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
         <RatingDisplay ratings={ratings} />
+
+        <div className="rounded-lg border border-border p-4">
+          <RatingForm
+            courseId={course.id}
+            initialValue={interaction?.userRating ?? null}
+            isLoggedIn={isLoggedIn}
+          />
+        </div>
+
         {course.officialUrl && (
           <a
             href={course.officialUrl}
@@ -185,9 +215,6 @@ export default async function CoursePage({ params, searchParams }: PageProps) {
             Przejdź do kursu →
           </a>
         )}
-        <p className="text-xs text-muted-foreground text-center">
-          Po zalogowaniu możesz wystawić ocenę i opinię.
-        </p>
       </aside>
     </article>
   );

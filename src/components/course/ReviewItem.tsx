@@ -1,18 +1,32 @@
 import type { ContentKind, UserRole } from "@/generated/prisma/enums";
+import { HelpfulButton } from "./HelpfulButton";
+import { ReportButton } from "./ReportButton";
 
 type ReviewItemProps = {
+  reviewId: string;
   body: string;
   createdAt: Date;
   helpfulCount: number;
   kind: keyof typeof ContentKind;
   user: { name: string | null; image: string | null; role: keyof typeof UserRole };
+  voted: boolean;
+  isLoggedIn: boolean;
 };
 
-export function ReviewItem({ body, createdAt, kind, helpfulCount, user }: ReviewItemProps) {
+export function ReviewItem({
+  reviewId,
+  body,
+  createdAt,
+  kind,
+  helpfulCount,
+  user,
+  voted,
+  isLoggedIn,
+}: ReviewItemProps) {
   const isCritic = kind === "CRITIC";
 
   return (
-    <article className="rounded-lg border border-border p-4 space-y-2">
+    <article className="rounded-lg border border-border p-4 space-y-3">
       <header className="flex items-center justify-between gap-3 text-sm">
         <div className="flex items-center gap-2">
           <span className="font-medium">{user.name ?? "Użytkownik"}</span>
@@ -31,11 +45,15 @@ export function ReviewItem({ body, createdAt, kind, helpfulCount, user }: Review
         </time>
       </header>
       <p className="text-sm leading-relaxed whitespace-pre-line">{body}</p>
-      {helpfulCount > 0 && (
-        <p className="text-xs text-muted-foreground">
-          Pomocna dla {helpfulCount} {helpfulCount === 1 ? "osoby" : "osób"}
-        </p>
-      )}
+      <footer className="flex items-center gap-2">
+        <HelpfulButton
+          reviewId={reviewId}
+          initialCount={helpfulCount}
+          initialVoted={voted}
+          isLoggedIn={isLoggedIn}
+        />
+        <ReportButton reviewId={reviewId} isLoggedIn={isLoggedIn} />
+      </footer>
     </article>
   );
 }

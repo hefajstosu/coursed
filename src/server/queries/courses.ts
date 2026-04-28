@@ -144,3 +144,27 @@ export function parseCachedRatings(raw: unknown): ComputedRatings | null {
   if (!raw || typeof raw !== "object") return null;
   return raw as ComputedRatings;
 }
+
+export async function getUserCourseInteraction(courseId: string, userId: string) {
+  const [rating, review, votes] = await Promise.all([
+    db.rating.findUnique({
+      where: { courseId_userId: { courseId, userId } },
+      select: { value: true },
+    }),
+    db.review.findUnique({
+      where: { courseId_userId: { courseId, userId } },
+      select: { body: true, status: true },
+    }),
+    db.reviewVote.findMany({
+      where: { userId, review: { courseId } },
+      select: { reviewId: true },
+    }),
+  ]);
+
+  return {
+    userRating: rating?.value ?? null,
+    userReviewBody: review?.body ?? null,
+    userReviewStatus: review?.status ?? null,
+    votedReviewIds: new Set(votes.map((v) => v.reviewId)),
+  };
+}
