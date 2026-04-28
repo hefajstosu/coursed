@@ -486,7 +486,11 @@ async function main() {
     const cached = computeRatings({ userValues, criticValues });
     await db.course.update({
       where: { id: course.id },
-      data: { cachedRatings: cached },
+      data: {
+        cachedRatings: cached,
+        avgOverall: cached.overall,
+        ratingsCount: userValues.length + criticValues.length,
+      },
     });
   }
 

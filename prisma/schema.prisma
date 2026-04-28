@@ -156,8 +156,12 @@ model Course {
   mergedFrom   Course[] @relation("CourseMerge")
 
   // Cache agregacji ocen (zapisany przez Server Action po każdym rate/review)
-  // { overall: number|null, user: number|null, critic: number|null, counts: {user, critic}, flags: {...} }
+  // { overall: number|null, user: {...}, critic: {...}, flags: {...} }
   cachedRatings Json?
+
+  // Denormalizacja dla sortowania i listingów (synchronizowana z cachedRatings)
+  avgOverall   Float?
+  ratingsCount Int    @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -170,6 +174,8 @@ model Course {
   @@index([format])
   @@index([language])
   @@index([level])
+  @@index([avgOverall])
+  @@index([createdAt])
 }
 
 model Category {

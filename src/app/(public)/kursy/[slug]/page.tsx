@@ -1,0 +1,233 @@
+import type { Metadata } from "next";
+import Image from "next/image";
+import Link from "next/link";
+import { notFound, redirect, permanentRedirect } from "next/navigation";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { RatingDisplay } from "@/components/course/RatingDisplay";
+import { ReviewItem } from "@/components/course/ReviewItem";
+import {
+  getCourseBySlug,
+  getCourseReviews,
+  parseCachedRatings,
+} from "@/server/queries/courses";
+import { formatLabels, levelLabels, languageLabel } from "@/lib/format";
+import type { ContentKind } from "@/generated/prisma/enums";
+
+type PageProps = {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const course = await getCourseBySlug(slug);
+  if (!course || course.redirectToSlug) return { title: "Kurs" };
+
+  return {
+    title: course.title,
+    description: course.shortDescription ?? `Opinie i oceny kursu ${course.title} na coursed.pl`,
+    openGraph: {
+      title: course.title,
+      description: course.shortDescription ?? undefined,
+      images: course.coverUrl ? [{ url: course.coverUrl }] : undefined,
+      type: "article",
+    },
+  };
+}
+
+function parseReviewFilter(raw: string | undefined): keyof typeof ContentKind | undefined {
+  if (raw === "user") return "USER";
+  if (raw === "critic") return "CRITIC";
+  return undefined;
+}
+
+export default async function CoursePage({ params, searchParams }: PageProps) {
+  const { slug } = await params;
+  const sp = await searchParams;
+  const course = await getCourseBySlug(slug);
+  if (!course) notFound();
+
+  if (course.redirectToSlug) {
+    permanentRedirect(`/kursy/${course.redirectToSlug}`);
+  }
+
+  if (course.status !== "PUBLISHED") {
+    redirect("/kursy");
+  }
+
+  const reviewFilterRaw = typeof sp.reviews === "string" ? sp.reviews : undefined;
+  const reviewKind = parseReviewFilter(reviewFilterRaw);
+  const reviews = await getCourseReviews(course.id, reviewKind);
+
+  const ratings = parseCachedRatings(course.cachedRatings);
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Course",
+    name: course.title,
+    description: course.shortDescription ?? course.description ?? undefined,
+    provider: course.platformName
+      ? { "@type": "Organization", name: course.platformName }
+      : undefined,
+    aggregateRating:
+      ratings && ratings.overall !== null
+        ? {
+            "@type": "AggregateRating",
+            ratingValue: ratings.overall,
+            bestRating: 10,
+            worstRating: 0,
+            ratingCount:
+              (ratings.user.count ?? 0) + (ratings.critic.count ?? 0),
+          }
+        : undefined,
+  };
+
+  return (
+    <article className="mx-auto max-w-6xl px-4 py-10 grid gap-8 lg:grid-cols-[1fr_320px]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
+      <div className="space-y-8">
+        <header className="space-y-4">
+          <nav className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+            {course.categories.map((cc) => (
+              <Link
+                key={cc.category.slug}
+                href={`/kategoria/${cc.category.slug}`}
+                className="rounded bg-muted px-2 py-0.5 hover:text-foreground"
+              >
+                {cc.category.name}
+              </Link>
+            ))}
+          </nav>
+          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">
+            {course.title}
+          </h1>
+          {course.shortDescription && (
+            <p className="text-lg text-muted-foreground">{course.shortDescription}</p>
+          )}
+          <dl className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-3 text-sm">
+            <Field label="Forma" value={formatLabels[course.format]} />
+            {course.level && <Field label="Poziom" value={levelLabels[course.level]} />}
+            {course.language && (
+              <Field label="Język" value={languageLabel(course.language) ?? ""} />
+            )}
+            {course.platformName && <Field label="Platforma" value={course.platformName} />}
+            {course.authorName && <Field label="Autor" value={course.authorName} />}
+            {course.priceModel && <Field label="Cena" value={course.priceModel} />}
+            {course.location && <Field label="Lokalizacja" value={course.location} />}
+            <Field label="Certyfikat" value={course.hasCertificate ? "Tak" : "Nie"} />
+          </dl>
+        </header>
+
+        {course.coverUrl && (
+          <div className="relative aspect-[16/9] overflow-hidden rounded-lg bg-muted">
+            <Image
+              src={course.coverUrl}
+              alt={course.title}
+              fill
+              sizes="(max-width: 1024px) 100vw, 800px"
+              className="object-cover"
+              priority
+            />
+          </div>
+        )}
+
+        {course.description && (
+          <section className="prose prose-zinc dark:prose-invert max-w-none">
+            <h2 className="text-xl font-semibold tracking-tight not-prose">Opis kursu</h2>
+            <p className="whitespace-pre-line text-sm leading-relaxed text-foreground/90 mt-3">
+              {course.description}
+            </p>
+          </section>
+        )}
+
+        <section className="space-y-4">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <h2 className="text-xl font-semibold tracking-tight">
+              Opinie {reviews.length > 0 && <span className="text-muted-foreground font-normal">({reviews.length})</span>}
+            </h2>
+            <ReviewFilterTabs slug={slug} active={reviewFilterRaw} />
+          </div>
+          {reviews.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground">
+              Brak opinii spełniających wybrany filtr.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {reviews.map((r) => (
+                <ReviewItem
+                  key={r.id}
+                  body={r.body}
+                  createdAt={r.createdAt}
+                  helpfulCount={r.helpfulCount}
+                  kind={r.kind}
+                  user={r.user}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
+
+      <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
+        <RatingDisplay ratings={ratings} />
+        {course.officialUrl && (
+          <a
+            href={course.officialUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(buttonVariants({ size: "lg" }), "w-full")}
+          >
+            Przejdź do kursu →
+          </a>
+        )}
+        <p className="text-xs text-muted-foreground text-center">
+          Po zalogowaniu możesz wystawić ocenę i opinię.
+        </p>
+      </aside>
+    </article>
+  );
+}
+
+function Field({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className="text-xs uppercase tracking-wide text-muted-foreground">{label}</dt>
+      <dd className="mt-0.5">{value}</dd>
+    </div>
+  );
+}
+
+function ReviewFilterTabs({ slug, active }: { slug: string; active: string | undefined }) {
+  const tabs = [
+    { value: undefined, label: "Wszystkie" },
+    { value: "user", label: "Użytkownicy" },
+    { value: "critic", label: "Krytycy" },
+  ];
+  return (
+    <div className="flex gap-1 rounded-md border border-border p-0.5 text-sm">
+      {tabs.map((t) => {
+        const isActive = (active ?? undefined) === t.value;
+        const href = t.value
+          ? `/kursy/${slug}?reviews=${t.value}`
+          : `/kursy/${slug}`;
+        return (
+          <Link
+            key={t.label}
+            href={href}
+            className={`rounded px-3 py-1 transition-colors ${
+              isActive ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+            }`}
+            scroll={false}
+          >
+            {t.label}
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
