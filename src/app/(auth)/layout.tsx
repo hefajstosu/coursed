@@ -5,7 +5,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="flex min-h-screen flex-col">
       <header className="border-b border-border">
-        <div className="mx-auto max-w-6xl px-4 py-4">
+        <div className="mx-auto flex h-14 max-w-6xl items-center px-4">
           <Link href="/" className="inline-flex" aria-label="coursed.pl">
             <Image
               src="/logo.png"
