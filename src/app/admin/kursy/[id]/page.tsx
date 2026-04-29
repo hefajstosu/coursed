@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireRole } from "@/lib/auth-helpers";
 import { CourseForm, type CourseFormDefaults } from "@/components/admin/CourseForm";
+import { MergeCourseDialog } from "@/components/admin/MergeCourseDialog";
 import { getAdminCourse, listFlatCategories } from "@/server/queries/admin";
 
 export const dynamic = "force-dynamic";
@@ -58,9 +59,14 @@ export default async function EditCoursePage({ params }: PageProps) {
             </Link>
           </p>
         </div>
-        {course.status === "MERGED" && (
-          <span className="rounded bg-muted px-2 py-1 text-xs">Scalony</span>
-        )}
+        <div className="flex items-center gap-2">
+          {course.status === "MERGED" && (
+            <span className="rounded bg-muted px-2 py-1 text-xs">Scalony</span>
+          )}
+          {actor.role === "ADMIN" && course.status !== "MERGED" && (
+            <MergeCourseDialog sourceId={course.id} sourceTitle={course.title} />
+          )}
+        </div>
       </header>
       <CourseForm
         mode="edit"
