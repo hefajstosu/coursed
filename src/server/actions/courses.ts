@@ -69,7 +69,11 @@ export async function rateCourse(input: { courseId: string; value: number }): Pr
 // Review
 // ──────────────────────────────────────────────────────────────────────────
 
-export async function addReview(input: { courseId: string; body: string }): Promise<ActionResult> {
+export async function addReview(input: {
+  courseId: string;
+  body: string;
+  value: number;
+}): Promise<ActionResult> {
   try {
     const user = await requireAuthUser();
     const data = addReviewSchema.parse(input);
@@ -87,12 +91,20 @@ export async function addReview(input: { courseId: string; body: string }): Prom
 
     const kind = kindFromRole(user.role);
 
-    await db.review.upsert({
-      where: { courseId_userId: { courseId: course.id, userId: user.id } },
-      create: { courseId: course.id, userId: user.id, body: data.body, kind },
-      update: { body: data.body, kind },
-    });
+    await db.$transaction([
+      db.rating.upsert({
+        where: { courseId_userId: { courseId: course.id, userId: user.id } },
+        create: { courseId: course.id, userId: user.id, value: data.value, kind },
+        update: { value: data.value, kind },
+      }),
+      db.review.upsert({
+        where: { courseId_userId: { courseId: course.id, userId: user.id } },
+        create: { courseId: course.id, userId: user.id, body: data.body, kind },
+        update: { body: data.body, kind },
+      }),
+    ]);
 
+    await recomputeCourseRatings(course.id);
     revalidatePath(`/kursy/${course.slug}`);
     return { ok: true };
   } catch (e) {
@@ -104,7 +116,10 @@ export async function addReview(input: { courseId: string; body: string }): Prom
 // Vote helpful
 // ──────────────────────────────────────────────────────────────────────────
 
-export async function voteHelpful(input: { reviewId: string }): Promise<ActionResult> {
+export async function voteReview(input: {
+  reviewId: string;
+  value: 1 | -1;
+}): Promise<ActionResult> {
   try {
     const user = await requireAuthUser();
     const data = voteReviewSchema.parse(input);
@@ -122,21 +137,46 @@ export async function voteHelpful(input: { reviewId: string }): Promise<ActionRe
       where: { reviewId_userId: { reviewId: review.id, userId: user.id } },
     });
 
-    if (existing) {
-      // Toggle off
+    if (existing && existing.value === data.value) {
+      // Klik tym samym → cofnij głos
       await db.$transaction([
-        db.reviewVote.delete({ where: { reviewId_userId: { reviewId: review.id, userId: user.id } } }),
+        db.reviewVote.delete({
+          where: { reviewId_userId: { reviewId: review.id, userId: user.id } },
+        }),
         db.review.update({
           where: { id: review.id },
-          data: { helpfulCount: { decrement: 1 } },
+          data:
+            existing.value === 1
+              ? { helpfulCount: { decrement: 1 } }
+              : { unhelpfulCount: { decrement: 1 } },
+        }),
+      ]);
+    } else if (existing) {
+      // Zmiana z like→dislike lub odwrotnie
+      await db.$transaction([
+        db.reviewVote.update({
+          where: { reviewId_userId: { reviewId: review.id, userId: user.id } },
+          data: { value: data.value },
+        }),
+        db.review.update({
+          where: { id: review.id },
+          data:
+            data.value === 1
+              ? { helpfulCount: { increment: 1 }, unhelpfulCount: { decrement: 1 } }
+              : { helpfulCount: { decrement: 1 }, unhelpfulCount: { increment: 1 } },
         }),
       ]);
     } else {
       await db.$transaction([
-        db.reviewVote.create({ data: { reviewId: review.id, userId: user.id } }),
+        db.reviewVote.create({
+          data: { reviewId: review.id, userId: user.id, value: data.value },
+        }),
         db.review.update({
           where: { id: review.id },
-          data: { helpfulCount: { increment: 1 } },
+          data:
+            data.value === 1
+              ? { helpfulCount: { increment: 1 } }
+              : { unhelpfulCount: { increment: 1 } },
         }),
       ]);
     }

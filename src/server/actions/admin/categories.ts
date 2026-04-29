@@ -6,7 +6,11 @@ import { db } from "@/lib/db";
 import { logAudit } from "@/lib/audit";
 import { categoryFormSchema } from "@/schemas/admin-categories";
 
-export type CategoryActionResult = { ok: true } | { ok: false; error: string; fieldErrors?: Record<string, string> };
+export type CategoryActionResult = {
+  ok?: boolean;
+  error?: string;
+  fieldErrors?: Record<string, string>;
+};
 
 function parseForm(formData: FormData) {
   return categoryFormSchema.safeParse({
@@ -17,7 +21,7 @@ function parseForm(formData: FormData) {
   });
 }
 
-function flatten(parsed: ReturnType<typeof parseForm>): { ok: false; error: string; fieldErrors: Record<string, string> } {
+function flatten(parsed: ReturnType<typeof parseForm>): CategoryActionResult {
   const fe = parsed.success ? {} : parsed.error.flatten().fieldErrors;
   const fieldErrors: Record<string, string> = {};
   for (const [k, v] of Object.entries(fe)) {
@@ -33,7 +37,7 @@ export async function createCategory(_prev: CategoryActionResult, formData: Form
 
   const data = parsed.data;
   const taken = await db.category.findUnique({ where: { slug: data.slug }, select: { id: true } });
-  if (taken) return { ok: false, error: "", fieldErrors: { slug: "Slug już zajęty" } };
+  if (taken) return { ok: false, fieldErrors: { slug: "Slug już zajęty" } };
 
   if (data.parentId) {
     const parent = await db.category.findUnique({ where: { id: data.parentId }, select: { parentId: true } });
@@ -77,7 +81,7 @@ export async function updateCategory(
 
   if (data.slug !== before.slug) {
     const taken = await db.category.findUnique({ where: { slug: data.slug }, select: { id: true } });
-    if (taken) return { ok: false, error: "", fieldErrors: { slug: "Slug już zajęty" } };
+    if (taken) return { ok: false, fieldErrors: { slug: "Slug już zajęty" } };
   }
 
   if (data.parentId === categoryId) {

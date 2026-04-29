@@ -30,7 +30,7 @@ export default async function HomePage() {
             href="/zglos-kurs"
             className={cn(buttonVariants({ size: "lg", variant: "outline" }))}
           >
-            Zgłoś kurs
+            Dodaj kurs
           </Link>
         </div>
       </section>

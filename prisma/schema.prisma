@@ -225,15 +225,16 @@ model Rating {
 }
 
 model Review {
-  id           String       @id @default(cuid())
-  courseId     String
-  userId       String
-  body         String       // tekst opinii
-  kind         ContentKind
-  status       ReviewStatus @default(VISIBLE)
-  helpfulCount Int          @default(0)
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  id             String       @id @default(cuid())
+  courseId       String
+  userId         String
+  body           String       // tekst opinii
+  kind           ContentKind
+  status         ReviewStatus @default(VISIBLE)
+  helpfulCount   Int          @default(0)
+  unhelpfulCount Int          @default(0)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   course  Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
   user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -247,6 +248,7 @@ model Review {
 model ReviewVote {
   reviewId  String
   userId    String
+  value     Int      @default(1) // 1 = helpful, -1 = unhelpful
   createdAt DateTime @default(now())
 
   review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)

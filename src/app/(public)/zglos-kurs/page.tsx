@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { CourseRequestForm } from "@/components/requests/CourseRequestForm";
 
 export const metadata: Metadata = {
-  title: "Zgłoś kurs",
+  title: "Dodaj kurs",
   description:
     "Brakuje kursu w katalogu coursed.pl? Zgłoś go redakcji — sprawdzimy i opublikujemy.",
 };
@@ -14,7 +14,7 @@ export default async function CourseRequestPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-10 space-y-8">
       <header className="space-y-3">
-        <h1 className="text-3xl font-semibold tracking-tight">Zgłoś kurs do katalogu</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">Dodaj kurs do katalogu</h1>
         <p className="text-muted-foreground">
           Nie znalazłeś kursu, którego szukasz? Wypełnij formularz — redakcja zweryfikuje
           zgłoszenie i doda kurs do katalogu, jeśli spełnia kryteria jakości.

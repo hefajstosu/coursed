@@ -30,7 +30,8 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
   if (!category) notFound();
 
   const page = Math.max(1, parseInt(typeof sp.page === "string" ? sp.page : "1", 10) || 1);
-  const { courses, total, perPage } = await listCourses({ categorySlug: slug }, "top-rated", page);
+  const categorySlugs = [category.slug, ...category.children.map((c) => c.slug)];
+  const { courses, total, perPage } = await listCourses({ categorySlugs }, "top-rated", page);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 space-y-8">

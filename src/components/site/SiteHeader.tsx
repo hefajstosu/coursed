@@ -25,11 +25,14 @@ export async function SiteHeader() {
             <Link href="/kursy" className="hover:text-foreground transition-colors">
               Kursy
             </Link>
+            <Link href="/kategorie" className="hover:text-foreground transition-colors">
+              Kategorie
+            </Link>
             <Link href="/blog" className="hover:text-foreground transition-colors">
               Blog
             </Link>
             <Link href="/zglos-kurs" className="hover:text-foreground transition-colors">
-              Zgłoś kurs
+              Dodaj kurs
             </Link>
           </nav>
         </div>

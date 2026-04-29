@@ -13,6 +13,38 @@ export async function getTopLevelCategories() {
   });
 }
 
+export async function getCategoriesTree() {
+  const cats = await db.category.findMany({
+    orderBy: { name: "asc" },
+    include: {
+      _count: {
+        select: {
+          courses: { where: { course: { status: CourseStatus.PUBLISHED } } },
+        },
+      },
+    },
+  });
+
+  type TreeNode = (typeof cats)[number] & { children: TreeNode[]; totalCourses: number };
+
+  const byParent = new Map<string | null, typeof cats>();
+  for (const c of cats) {
+    const k = c.parentId;
+    if (!byParent.has(k)) byParent.set(k, []);
+    byParent.get(k)!.push(c);
+  }
+
+  const build = (parentId: string | null): TreeNode[] =>
+    (byParent.get(parentId) ?? []).map((c) => {
+      const children = build(c.id);
+      const totalCourses =
+        c._count.courses + children.reduce((sum, ch) => sum + ch.totalCourses, 0);
+      return { ...c, children, totalCourses };
+    });
+
+  return build(null);
+}
+
 export async function getCategoryBySlug(slug: string) {
   return db.category.findUnique({
     where: { slug },

@@ -10,6 +10,7 @@ import type { ComputedRatings } from "@/lib/ratings";
 
 export type CourseListFilters = {
   categorySlug?: string;
+  categorySlugs?: string[];
   format?: keyof typeof CourseFormat;
   language?: string;
   level?: keyof typeof CourseLevel;
@@ -54,11 +55,17 @@ export async function listCourses(
     ...(filters.format && { format: filters.format }),
     ...(filters.language && { language: filters.language }),
     ...(filters.level && { level: filters.level }),
-    ...(filters.categorySlug && {
-      categories: {
-        some: { category: { slug: filters.categorySlug } },
-      },
-    }),
+    ...(filters.categorySlugs && filters.categorySlugs.length > 0
+      ? {
+          categories: {
+            some: { category: { slug: { in: filters.categorySlugs } } },
+          },
+        }
+      : filters.categorySlug && {
+          categories: {
+            some: { category: { slug: filters.categorySlug } },
+          },
+        }),
   };
 
   const orderBy =
@@ -127,7 +134,7 @@ export async function getCourseReviews(
   courseId: string,
   kind?: keyof typeof ContentKind,
 ) {
-  return db.review.findMany({
+  const reviews = await db.review.findMany({
     where: {
       courseId,
       status: "VISIBLE",
@@ -138,6 +145,22 @@ export async function getCourseReviews(
       user: { select: { name: true, image: true, role: true } },
     },
   });
+
+  if (reviews.length === 0) return [];
+
+  const ratings = await db.rating.findMany({
+    where: {
+      courseId,
+      userId: { in: reviews.map((r) => r.userId) },
+    },
+    select: { userId: true, value: true },
+  });
+  const ratingByUser = new Map(ratings.map((r) => [r.userId, r.value]));
+
+  return reviews.map((r) => ({
+    ...r,
+    rating: ratingByUser.get(r.userId) ?? null,
+  }));
 }
 
 export function parseCachedRatings(raw: unknown): ComputedRatings | null {
@@ -157,7 +180,7 @@ export async function getUserCourseInteraction(courseId: string, userId: string)
     }),
     db.reviewVote.findMany({
       where: { userId, review: { courseId } },
-      select: { reviewId: true },
+      select: { reviewId: true, value: true },
     }),
   ]);
 
@@ -165,6 +188,6 @@ export async function getUserCourseInteraction(courseId: string, userId: string)
     userRating: rating?.value ?? null,
     userReviewBody: review?.body ?? null,
     userReviewStatus: review?.status ?? null,
-    votedReviewIds: new Set(votes.map((v) => v.reviewId)),
+    voteByReview: new Map(votes.map((v) => [v.reviewId, v.value])),
   };
 }

@@ -26,6 +26,11 @@ export function SiteFooter() {
               </Link>
             </li>
             <li>
+              <Link href="/kategorie" className="hover:text-foreground">
+                Kategorie
+              </Link>
+            </li>
+            <li>
               <Link href="/kategoria/programowanie" className="hover:text-foreground">
                 Programowanie
               </Link>
@@ -52,7 +57,7 @@ export function SiteFooter() {
             </li>
             <li>
               <Link href="/zglos-kurs" className="hover:text-foreground">
-                Zgłoś kurs
+                Dodaj kurs
               </Link>
             </li>
           </ul>

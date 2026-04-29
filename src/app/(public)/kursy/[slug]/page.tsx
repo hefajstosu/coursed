@@ -167,6 +167,7 @@ export default async function CoursePage({ params, searchParams }: PageProps) {
           <ReviewForm
             courseId={course.id}
             initialBody={interaction?.userReviewBody ?? null}
+            initialRating={interaction?.userRating ?? null}
             isLoggedIn={isLoggedIn}
           />
 
@@ -176,19 +177,24 @@ export default async function CoursePage({ params, searchParams }: PageProps) {
             </div>
           ) : (
             <div className="space-y-3">
-              {reviews.map((r) => (
-                <ReviewItem
-                  key={r.id}
-                  reviewId={r.id}
-                  body={r.body}
-                  createdAt={r.createdAt}
-                  helpfulCount={r.helpfulCount}
-                  kind={r.kind}
-                  user={r.user}
-                  voted={interaction?.votedReviewIds.has(r.id) ?? false}
-                  isLoggedIn={isLoggedIn}
-                />
-              ))}
+              {reviews.map((r) => {
+                const v = interaction?.voteByReview.get(r.id);
+                return (
+                  <ReviewItem
+                    key={r.id}
+                    reviewId={r.id}
+                    body={r.body}
+                    createdAt={r.createdAt}
+                    helpfulCount={r.helpfulCount}
+                    unhelpfulCount={r.unhelpfulCount}
+                    rating={r.rating}
+                    kind={r.kind}
+                    user={r.user}
+                    vote={v === 1 ? 1 : v === -1 ? -1 : null}
+                    isLoggedIn={isLoggedIn}
+                  />
+                );
+              })}
             </div>
           )}
         </section>

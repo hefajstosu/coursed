@@ -15,7 +15,7 @@ import {
 } from "@/server/actions/admin/categories";
 import { slugify } from "@/lib/slug";
 
-const initialState: CategoryActionResult = { ok: true } as CategoryActionResult;
+const initialState: CategoryActionResult = {};
 
 export type CategoryFormDefaults = {
   id?: string;
@@ -44,7 +44,7 @@ export function CategoryForm({
       ? createCategory
       : updateCategory.bind(null, defaults.id!);
 
-  const [state, formAction, pending] = useActionState(action, initialState as CategoryActionResult);
+  const [state, formAction, pending] = useActionState(action, initialState);
 
   const [name, setName] = useState(defaults.name);
   const [slug, setSlug] = useState(defaults.slug);
@@ -55,21 +55,17 @@ export function CategoryForm({
   }, [name, slugTouched]);
 
   useEffect(() => {
-    if (state.ok) {
-      if (mode === "create") {
-        toast.success("Kategoria utworzona.");
-      } else {
-        toast.success("Zapisano.");
-      }
+    if (state.ok === true) {
+      toast.success(mode === "create" ? "Kategoria utworzona." : "Zapisano.");
       router.refresh();
       onClose?.();
-    } else if (state.error && !state.fieldErrors) {
+    } else if (state.ok === false && state.error && !state.fieldErrors) {
       toast.error(state.error);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
 
-  const fieldErrors = (state as { fieldErrors?: Record<string, string> }).fieldErrors;
+  const fieldErrors = state.fieldErrors;
 
   return (
     <form action={formAction} className="space-y-3">
