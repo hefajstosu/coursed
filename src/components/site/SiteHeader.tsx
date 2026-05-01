@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { Search } from "lucide-react";
 import { auth } from "@/auth";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -36,6 +37,29 @@ export async function SiteHeader() {
             </Link>
           </nav>
         </div>
+
+        <form
+          action="/szukaj"
+          role="search"
+          className="hidden flex-1 max-w-xs items-center md:flex"
+        >
+          <label htmlFor="site-search" className="sr-only">
+            Szukaj kursów
+          </label>
+          <div className="relative w-full">
+            <Search
+              aria-hidden="true"
+              className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+            />
+            <input
+              id="site-search"
+              type="search"
+              name="q"
+              placeholder="Szukaj kursów…"
+              className="w-full rounded-md border border-input bg-background py-1.5 pl-8 pr-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            />
+          </div>
+        </form>
 
         <div className="flex items-center gap-2">
           {session?.user ? (

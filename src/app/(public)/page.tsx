@@ -46,10 +46,21 @@ export default async function HomePage() {
       )}
 
       {popularCategories.length > 0 && (
-        <Section
-          title="Popularne kategorie"
-          subtitle="Najczęściej przeglądane obszary tematyczne."
-        >
+        <section className="space-y-5">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-semibold tracking-tight">Popularne kategorie</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Najczęściej przeglądane obszary tematyczne.
+              </p>
+            </div>
+            <Link
+              href="/kategorie"
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }), "shrink-0")}
+            >
+              Wszystkie kategorie →
+            </Link>
+          </div>
           <ul className="flex flex-wrap gap-2">
             {popularCategories.map((c) => (
               <li key={c.id}>
@@ -65,7 +76,7 @@ export default async function HomePage() {
               </li>
             ))}
           </ul>
-        </Section>
+        </section>
       )}
 
       {recent.length > 0 && (

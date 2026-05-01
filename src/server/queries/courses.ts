@@ -19,6 +19,7 @@ export type CourseListFilters = {
 export type CourseSort = "newest" | "top-rated" | "popular";
 
 const PER_PAGE = 20;
+const SEARCH_MIN_LEN = 2;
 
 const courseCardSelect = {
   id: true,
@@ -87,6 +88,122 @@ export async function listCourses(
   ]);
 
   return { courses, total, page, perPage: PER_PAGE };
+}
+
+type SearchHit = {
+  id: string;
+  rank: number;
+  snippet: string | null;
+};
+
+export async function searchCourses(
+  rawQuery: string,
+  filters: CourseListFilters = {},
+  page = 1,
+) {
+  const q = rawQuery.trim();
+  if (q.length < SEARCH_MIN_LEN) {
+    return { courses: [], total: 0, page, perPage: PER_PAGE, snippets: new Map<string, string>() };
+  }
+
+  const tsQuery = q
+    .split(/\s+/)
+    .map((tok) => tok.replace(/[^\p{L}\p{N}]/gu, ""))
+    .filter((tok) => tok.length > 0)
+    .map((tok) => `${tok}:*`)
+    .join(" & ");
+
+  if (!tsQuery) {
+    return { courses: [], total: 0, page, perPage: PER_PAGE, snippets: new Map<string, string>() };
+  }
+
+  const offset = (page - 1) * PER_PAGE;
+  const categorySlug = filters.categorySlug ?? null;
+  const categorySlugs =
+    filters.categorySlugs && filters.categorySlugs.length > 0 ? filters.categorySlugs : null;
+  const format = filters.format ?? null;
+  const language = filters.language ?? null;
+  const level = filters.level ?? null;
+
+  const hits = await db.$queryRaw<SearchHit[]>`
+    SELECT
+      c.id,
+      ts_rank(c."searchVector", q) AS rank,
+      ts_headline(
+        'simple',
+        coalesce(c."shortDescription", c."description", ''),
+        q,
+        'StartSel=«««,StopSel=»»»,MaxFragments=1,MaxWords=24,MinWords=8,ShortWord=2'
+      ) AS snippet
+    FROM "Course" c, to_tsquery('simple', ${tsQuery}) q
+    WHERE c.status = 'PUBLISHED'
+      AND c."searchVector" @@ q
+      AND (${format}::text IS NULL OR c.format::text = ${format}::text)
+      AND (${language}::text IS NULL OR c.language = ${language}::text)
+      AND (${level}::text IS NULL OR c.level::text = ${level}::text)
+      AND (
+        ${categorySlugs}::text[] IS NULL
+        OR EXISTS (
+          SELECT 1 FROM "CourseCategory" cc
+          JOIN "Category" cat ON cat.id = cc."categoryId"
+          WHERE cc."courseId" = c.id AND cat.slug = ANY(${categorySlugs}::text[])
+        )
+      )
+      AND (
+        ${categorySlug}::text IS NULL
+        OR EXISTS (
+          SELECT 1 FROM "CourseCategory" cc
+          JOIN "Category" cat ON cat.id = cc."categoryId"
+          WHERE cc."courseId" = c.id AND cat.slug = ${categorySlug}::text
+        )
+      )
+    ORDER BY rank DESC, c."ratingsCount" DESC, c."createdAt" DESC
+    LIMIT ${PER_PAGE} OFFSET ${offset}
+  `;
+
+  const totalRows = await db.$queryRaw<Array<{ count: bigint }>>`
+    SELECT count(*)::bigint AS count
+    FROM "Course" c, to_tsquery('simple', ${tsQuery}) q
+    WHERE c.status = 'PUBLISHED'
+      AND c."searchVector" @@ q
+      AND (${format}::text IS NULL OR c.format::text = ${format}::text)
+      AND (${language}::text IS NULL OR c.language = ${language}::text)
+      AND (${level}::text IS NULL OR c.level::text = ${level}::text)
+      AND (
+        ${categorySlugs}::text[] IS NULL
+        OR EXISTS (
+          SELECT 1 FROM "CourseCategory" cc
+          JOIN "Category" cat ON cat.id = cc."categoryId"
+          WHERE cc."courseId" = c.id AND cat.slug = ANY(${categorySlugs}::text[])
+        )
+      )
+      AND (
+        ${categorySlug}::text IS NULL
+        OR EXISTS (
+          SELECT 1 FROM "CourseCategory" cc
+          JOIN "Category" cat ON cat.id = cc."categoryId"
+          WHERE cc."courseId" = c.id AND cat.slug = ${categorySlug}::text
+        )
+      )
+  `;
+
+  const total = Number(totalRows[0]?.count ?? 0);
+
+  if (hits.length === 0) {
+    return { courses: [], total, page, perPage: PER_PAGE, snippets: new Map<string, string>() };
+  }
+
+  const ids = hits.map((h) => h.id);
+  const found = await db.course.findMany({
+    where: { id: { in: ids } },
+    select: courseCardSelect,
+  });
+
+  const byId = new Map(found.map((c) => [c.id, c]));
+  const courses = ids.map((id) => byId.get(id)).filter((c): c is NonNullable<typeof c> => Boolean(c));
+  const snippets = new Map(hits.map((h) => [h.id, h.snippet ?? ""]));
+
+  return { courses, total, page, perPage: PER_PAGE, snippets };
 }
 
 export async function getFeaturedCourses(limit = 6) {

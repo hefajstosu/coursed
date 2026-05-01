@@ -2,7 +2,12 @@ import type { Metadata } from "next";
 import { CourseCard } from "@/components/course/CourseCard";
 import { CourseFilters } from "@/components/filters/CourseFilters";
 import { Pagination } from "@/components/site/Pagination";
-import { listCourses, type CourseListFilters, type CourseSort } from "@/server/queries/courses";
+import {
+  listCourses,
+  searchCourses,
+  type CourseListFilters,
+  type CourseSort,
+} from "@/server/queries/courses";
 import { getTopLevelCategories } from "@/server/queries/categories";
 import { formatLabels, levelLabels, languageLabels } from "@/lib/format";
 
@@ -43,11 +48,13 @@ export default async function CoursesPage({
   };
   const sort = parseSort(get("sort"));
   const page = Math.max(1, parseInt(get("page") ?? "1", 10) || 1);
+  const q = (get("q") ?? "").trim();
 
-  const [{ courses, total, perPage }, topCategories] = await Promise.all([
-    listCourses(filters, sort, page),
+  const [listing, topCategories] = await Promise.all([
+    q ? searchCourses(q, filters, page) : listCourses(filters, sort, page),
     getTopLevelCategories(),
   ]);
+  const { courses, total, perPage } = listing;
 
   const categoryOptions = topCategories.flatMap((c) => [
     { value: c.slug, label: c.name },
@@ -60,14 +67,18 @@ export default async function CoursesPage({
     language: filters.language,
     level: filters.level,
     sort: sort === "newest" ? undefined : sort,
+    q: q || undefined,
   };
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 space-y-6">
       <header className="space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight">Wszystkie kursy</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">
+          {q ? `Wyniki dla „${q}"` : "Wszystkie kursy"}
+        </h1>
         <p className="text-sm text-muted-foreground">
-          {total} {total === 1 ? "kurs" : total >= 2 && total <= 4 ? "kursy" : "kursów"} w katalogu.
+          {total} {total === 1 ? "kurs" : total >= 2 && total <= 4 ? "kursy" : "kursów"}
+          {q ? ` pasuje do wyszukiwania.` : ` w katalogu.`}
         </p>
       </header>
 
