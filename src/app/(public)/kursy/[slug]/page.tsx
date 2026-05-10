@@ -9,14 +9,16 @@ import { ReviewItem } from "@/components/course/ReviewItem";
 import { RatingForm } from "@/components/course/RatingForm";
 import { ReviewForm } from "@/components/course/ReviewForm";
 import { EmbedSnippet } from "@/components/course/EmbedSnippet";
+import { CourseCard } from "@/components/course/CourseCard";
 import {
   getCourseBySlug,
   getCourseReviews,
+  getSimilarCourses,
   getUserCourseInteraction,
   parseCachedRatings,
 } from "@/server/queries/courses";
 import { formatLabels, levelLabels, languageLabel } from "@/lib/format";
-import { breadcrumbJsonLd, SITE_URL } from "@/lib/seo";
+import { absoluteUrl, breadcrumbJsonLd, SITE_URL } from "@/lib/seo";
 import { auth } from "@/auth";
 import type { ContentKind } from "@/generated/prisma/enums";
 
@@ -65,9 +67,16 @@ export default async function CoursePage({ params, searchParams }: PageProps) {
 
   const reviewFilterRaw = typeof sp.reviews === "string" ? sp.reviews : undefined;
   const reviewKind = parseReviewFilter(reviewFilterRaw);
-  const [reviews, session] = await Promise.all([
+  const [reviews, session, similar] = await Promise.all([
     getCourseReviews(course.id, reviewKind),
     auth(),
+    getSimilarCourses({
+      courseId: course.id,
+      categoryIds: course.categories.map((cc) => cc.category.id),
+      format: course.format,
+      level: course.level,
+      limit: 6,
+    }),
   ]);
 
   const isLoggedIn = !!session?.user;
@@ -119,6 +128,21 @@ export default async function CoursePage({ params, searchParams }: PageProps) {
     ...(topReviews.length > 0 ? { review: topReviews } : {}),
   };
 
+  const similarItemList =
+    similar.length > 0
+      ? {
+          "@context": "https://schema.org",
+          "@type": "ItemList",
+          name: `Podobne kursy do: ${course.title}`,
+          itemListElement: similar.map((s, i) => ({
+            "@type": "ListItem",
+            position: i + 1,
+            url: absoluteUrl(`/kursy/${s.slug}`),
+            name: s.title,
+          })),
+        }
+      : null;
+
   const primaryCategory = course.categories[0]?.category;
   const breadcrumbs = breadcrumbJsonLd([
     { name: "Strona główna", path: "/" },
@@ -139,6 +163,12 @@ export default async function CoursePage({ params, searchParams }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }}
       />
+      {similarItemList && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(similarItemList) }}
+        />
+      )}
 
       <div className="space-y-8">
         <header className="space-y-4">
@@ -236,6 +266,17 @@ export default async function CoursePage({ params, searchParams }: PageProps) {
             </div>
           )}
         </section>
+
+        {similar.length > 0 && (
+          <section className="space-y-4">
+            <h2 className="text-xl font-semibold tracking-tight">Podobne kursy</h2>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {similar.map((s) => (
+                <CourseCard key={s.id} course={s} />
+              ))}
+            </div>
+          </section>
+        )}
       </div>
 
       <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">

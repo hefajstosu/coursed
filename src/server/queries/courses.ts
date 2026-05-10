@@ -285,6 +285,54 @@ export function parseCachedRatings(raw: unknown): ComputedRatings | null {
   return raw as ComputedRatings;
 }
 
+export async function getSimilarCourses(params: {
+  courseId: string;
+  categoryIds: string[];
+  format: keyof typeof CourseFormat;
+  level: keyof typeof CourseLevel | null;
+  limit?: number;
+}): Promise<CourseCardData[]> {
+  const { courseId, categoryIds, format, level, limit = 6 } = params;
+  if (categoryIds.length === 0) return [];
+
+  const candidates = await db.course.findMany({
+    where: {
+      status: CourseStatus.PUBLISHED,
+      id: { not: courseId },
+      categories: { some: { categoryId: { in: categoryIds } } },
+    },
+    orderBy: [{ avgOverall: "desc" }, { ratingsCount: "desc" }],
+    take: 30,
+    select: {
+      ...courseCardSelect,
+      categories: {
+        select: {
+          category: { select: { id: true, slug: true, name: true } },
+        },
+      },
+    },
+  });
+
+  const catSet = new Set(categoryIds);
+  const scored = candidates.map((c) => {
+    const overlap = c.categories.filter((cc) => catSet.has(cc.category.id)).length;
+    let score = overlap * 10;
+    if (c.format === format) score += 3;
+    if (level && c.level === level) score += 2;
+    score += Math.min(2, (c.ratingsCount ?? 0) / 10);
+    return { c, score };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+
+  return scored.slice(0, limit).map(({ c }) => ({
+    ...c,
+    categories: c.categories.slice(0, 2).map((cc) => ({
+      category: { slug: cc.category.slug, name: cc.category.name },
+    })),
+  }));
+}
+
 export async function getCourseEmbed(slug: string) {
   return db.course.findFirst({
     where: { slug, status: CourseStatus.PUBLISHED },
