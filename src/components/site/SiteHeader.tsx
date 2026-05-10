@@ -79,7 +79,7 @@ export async function SiteHeader() {
               <form action={logOut}>
                 <button
                   type="submit"
-                  className={cn(buttonVariants({ variant: "destructive", size: "sm" }))}
+                  className={cn(buttonVariants({ variant: "secondary", size: "sm" }))}
                 >
                   Wyloguj
                 </button>
