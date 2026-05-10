@@ -1,9 +1,14 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { CourseCard } from "@/components/course/CourseCard";
 import { getFeaturedCourses, getRecentCourses } from "@/server/queries/courses";
 import { getPopularCategories } from "@/server/queries/categories";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 export default async function HomePage() {
   const [featured, recent, popularCategories] = await Promise.all([

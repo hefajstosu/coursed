@@ -5,6 +5,7 @@ import { CourseCard } from "@/components/course/CourseCard";
 import { Pagination } from "@/components/site/Pagination";
 import { getCategoryBySlug } from "@/server/queries/categories";
 import { listCourses } from "@/server/queries/courses";
+import { breadcrumbJsonLd } from "@/lib/seo";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -20,6 +21,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     description:
       category.description ??
       `Najlepsze kursy w kategorii ${category.name} na coursed.pl — opinie, oceny, porównania.`,
+    alternates: { canonical: `/kategoria/${category.slug}` },
   };
 }
 
@@ -33,8 +35,21 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
   const categorySlugs = [category.slug, ...category.children.map((c) => c.slug)];
   const { courses, total, perPage } = await listCourses({ categorySlugs }, "top-rated", page);
 
+  const breadcrumbs = breadcrumbJsonLd([
+    { name: "Strona główna", path: "/" },
+    { name: "Kategorie", path: "/kategorie" },
+    ...(category.parent
+      ? [{ name: category.parent.name, path: `/kategoria/${category.parent.slug}` }]
+      : []),
+    { name: category.name },
+  ]);
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 space-y-8">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }}
+      />
       <header className="space-y-3">
         {category.parent && (
           <nav className="text-sm text-muted-foreground">

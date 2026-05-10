@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: "Blog",
   description:
     "Poradniki, zestawienia i recenzje redakcji coursed.pl — jak wybierać kursy i nie dać się wciągnąć w marketing.",
+  alternates: { canonical: "/blog" },
 };
 
 const dateFormatter = new Intl.DateTimeFormat("pl-PL", {

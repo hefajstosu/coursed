@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "Dodaj kurs",
   description:
     "Brakuje kursu w katalogu coursed.pl? Zgłoś go redakcji — sprawdzimy i opublikujemy.",
+  alternates: { canonical: "/zglos-kurs" },
 };
 
 export default async function CourseRequestPage() {

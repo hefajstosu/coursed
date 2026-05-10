@@ -19,6 +19,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: `${BASE_URL}/`, changeFrequency: "weekly", priority: 1 },
     { url: `${BASE_URL}/kursy`, changeFrequency: "daily", priority: 0.9 },
+    { url: `${BASE_URL}/kategorie`, changeFrequency: "weekly", priority: 0.7 },
     { url: `${BASE_URL}/blog`, changeFrequency: "weekly", priority: 0.6 },
     { url: `${BASE_URL}/zglos-kurs`, changeFrequency: "monthly", priority: 0.4 },
   ];

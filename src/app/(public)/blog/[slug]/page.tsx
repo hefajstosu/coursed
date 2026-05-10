@@ -4,6 +4,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getBlogPostBySlug } from "@/server/queries/blog";
 import { Markdown } from "@/lib/markdown";
+import { breadcrumbJsonLd } from "@/lib/seo";
 
 type PageProps = { params: Promise<{ slug: string }> };
 
@@ -21,11 +22,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title: post.title,
     description: post.excerpt ?? undefined,
+    alternates: { canonical: `/blog/${post.slug}` },
     openGraph: {
       title: post.title,
       description: post.excerpt ?? undefined,
-      images: post.coverUrl ? [{ url: post.coverUrl }] : undefined,
       type: "article",
+      url: `/blog/${post.slug}`,
       publishedTime: post.publishedAt?.toISOString(),
       authors: post.author.name ? [post.author.name] : undefined,
     },
@@ -48,11 +50,21 @@ export default async function BlogPostPage({ params }: PageProps) {
     author: post.author.name ? { "@type": "Person", name: post.author.name } : undefined,
   };
 
+  const breadcrumbs = breadcrumbJsonLd([
+    { name: "Strona główna", path: "/" },
+    { name: "Blog", path: "/blog" },
+    { name: post.title },
+  ]);
+
   return (
     <article className="mx-auto max-w-3xl px-4 py-10 space-y-8">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }}
       />
 
       <nav className="text-sm">

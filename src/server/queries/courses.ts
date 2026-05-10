@@ -285,6 +285,19 @@ export function parseCachedRatings(raw: unknown): ComputedRatings | null {
   return raw as ComputedRatings;
 }
 
+export async function getCourseEmbed(slug: string) {
+  return db.course.findFirst({
+    where: { slug, status: CourseStatus.PUBLISHED },
+    select: {
+      slug: true,
+      title: true,
+      cachedRatings: true,
+      avgOverall: true,
+      ratingsCount: true,
+    },
+  });
+}
+
 export async function getUserCourseInteraction(courseId: string, userId: string) {
   const [rating, review, votes] = await Promise.all([
     db.rating.findUnique({

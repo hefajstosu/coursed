@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "Kategorie kursów",
   description:
     "Przeglądaj wszystkie kategorie kursów w serwisie coursed.pl — od programowania po marketing i rozwój osobisty.",
+  alternates: { canonical: "/kategorie" },
 };
 
 export const dynamic = "force-dynamic";

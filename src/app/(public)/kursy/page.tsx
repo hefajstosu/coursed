@@ -15,6 +15,7 @@ export const metadata: Metadata = {
   title: "Wszystkie kursy",
   description:
     "Pełny katalog kursów na coursed.pl — filtruj po kategorii, formacie, języku i poziomie zaawansowania.",
+  alternates: { canonical: "/kursy" },
 };
 
 const SORT_OPTIONS: { value: CourseSort; label: string }[] = [

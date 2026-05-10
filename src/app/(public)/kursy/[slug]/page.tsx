@@ -8,6 +8,7 @@ import { RatingDisplay } from "@/components/course/RatingDisplay";
 import { ReviewItem } from "@/components/course/ReviewItem";
 import { RatingForm } from "@/components/course/RatingForm";
 import { ReviewForm } from "@/components/course/ReviewForm";
+import { EmbedSnippet } from "@/components/course/EmbedSnippet";
 import {
   getCourseBySlug,
   getCourseReviews,
@@ -15,6 +16,7 @@ import {
   parseCachedRatings,
 } from "@/server/queries/courses";
 import { formatLabels, levelLabels, languageLabel } from "@/lib/format";
+import { breadcrumbJsonLd, SITE_URL } from "@/lib/seo";
 import { auth } from "@/auth";
 import type { ContentKind } from "@/generated/prisma/enums";
 
@@ -31,11 +33,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title: course.title,
     description: course.shortDescription ?? `Opinie i oceny kursu ${course.title} na coursed.pl`,
+    alternates: { canonical: `/kursy/${course.slug}` },
     openGraph: {
       title: course.title,
       description: course.shortDescription ?? undefined,
-      images: course.coverUrl ? [{ url: course.coverUrl }] : undefined,
       type: "article",
+      url: `/kursy/${course.slug}`,
     },
   };
 }
@@ -74,7 +77,27 @@ export default async function CoursePage({ params, searchParams }: PageProps) {
 
   const ratings = parseCachedRatings(course.cachedRatings);
 
-  const jsonLd = {
+  const topReviews = reviews
+    .filter((r) => r.body && r.body.trim().length > 0)
+    .slice(0, 3)
+    .map((r) => ({
+      "@type": "Review" as const,
+      author: { "@type": "Person", name: r.user.name ?? "Anonimowy" },
+      datePublished: r.createdAt.toISOString(),
+      reviewBody: r.body,
+      ...(r.rating !== null
+        ? {
+            reviewRating: {
+              "@type": "Rating",
+              ratingValue: r.rating,
+              bestRating: 10,
+              worstRating: 0,
+            },
+          }
+        : {}),
+    }));
+
+  const courseJsonLd = {
     "@context": "https://schema.org",
     "@type": "Course",
     name: course.title,
@@ -93,13 +116,28 @@ export default async function CoursePage({ params, searchParams }: PageProps) {
               (ratings.user.count ?? 0) + (ratings.critic.count ?? 0),
           }
         : undefined,
+    ...(topReviews.length > 0 ? { review: topReviews } : {}),
   };
+
+  const primaryCategory = course.categories[0]?.category;
+  const breadcrumbs = breadcrumbJsonLd([
+    { name: "Strona główna", path: "/" },
+    { name: "Kursy", path: "/kursy" },
+    ...(primaryCategory
+      ? [{ name: primaryCategory.name, path: `/kategoria/${primaryCategory.slug}` }]
+      : []),
+    { name: course.title },
+  ]);
 
   return (
     <article className="mx-auto max-w-6xl px-4 py-10 grid gap-8 lg:grid-cols-[1fr_320px]">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(courseJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }}
       />
 
       <div className="space-y-8">
