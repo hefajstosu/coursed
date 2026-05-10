@@ -67,7 +67,11 @@ export function SiteFooter() {
           <ul className="space-y-1.5 text-muted-foreground">
             <li>O coursed.pl</li>
             <li>Polityka prywatności</li>
-            <li>Regulamin</li>
+            <li>
+              <Link href="/zasady" className="hover:text-foreground">
+                Zasady opinii
+              </Link>
+            </li>
           </ul>
         </div>
       </div>

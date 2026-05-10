@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { rateLimit, LIMITS } from "@/lib/rate-limit";
+import { spamHeuristics, isCrossCourseDuplicate } from "@/lib/spam";
 import { ContentKind, UserRole } from "@/generated/prisma/enums";
 import { recomputeCourseRatings } from "@/server/ratings-cache";
 import {
@@ -81,12 +82,22 @@ export async function addReview(input: {
     const rl = rateLimit(`review:${user.id}`, LIMITS.review);
     if (!rl.ok) return { ok: false, error: "Za dużo opinii w krótkim czasie. Spróbuj później." };
 
+    const heuristic = spamHeuristics(data.body);
+    if (!heuristic.ok) return { ok: false, error: heuristic.reason };
+
     const course = await db.course.findUnique({
       where: { id: data.courseId },
       select: { id: true, slug: true, status: true },
     });
     if (!course || course.status !== "PUBLISHED") {
       return { ok: false, error: "Kurs niedostępny." };
+    }
+
+    if (await isCrossCourseDuplicate(user.id, course.id, data.body)) {
+      return {
+        ok: false,
+        error: "Ta sama treść została już wystawiona przy innym kursie.",
+      };
     }
 
     const kind = kindFromRole(user.role);

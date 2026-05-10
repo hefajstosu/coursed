@@ -112,7 +112,17 @@ export function ReviewForm({ courseId, initialBody, initialRating, isLoggedIn }:
           disabled={isPending}
         />
         <div className="flex items-center justify-between">
-          <span className="text-xs text-muted-foreground tabular-nums">{body.length}/5000</span>
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {body.length}/5000 ·{" "}
+            <a
+              href="/zasady"
+              target="_blank"
+              rel="noopener"
+              className="underline-offset-4 hover:underline hover:text-foreground"
+            >
+              zasady opinii
+            </a>
+          </span>
           <Button onClick={submit} disabled={isPending} size="sm">
             {isPending ? "Zapisuję…" : initialBody ? "Zaktualizuj" : "Opublikuj"}
           </Button>
