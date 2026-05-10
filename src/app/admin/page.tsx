@@ -58,7 +58,15 @@ export default async function AdminDashboard() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-base font-semibold tracking-tight">Ostatnia aktywność</h2>
+        <div className="flex items-baseline justify-between">
+          <h2 className="text-base font-semibold tracking-tight">Ostatnia aktywność</h2>
+          <Link
+            href="/admin/audyt"
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            Pełny audit log →
+          </Link>
+        </div>
         {recentAudit.length === 0 ? (
           <p className="rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground">
             Brak zapisanych zdarzeń.

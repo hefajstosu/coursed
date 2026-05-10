@@ -4,6 +4,7 @@ import { Search } from "lucide-react";
 import { auth } from "@/auth";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { logOut } from "@/server/actions/auth";
 
 export async function SiteHeader() {
   const session = await auth();
@@ -75,6 +76,14 @@ export async function SiteHeader() {
                   Panel
                 </Link>
               )}
+              <form action={logOut}>
+                <button
+                  type="submit"
+                  className={cn(buttonVariants({ variant: "destructive", size: "sm" }))}
+                >
+                  Wyloguj
+                </button>
+              </form>
             </div>
           ) : (
             <Link

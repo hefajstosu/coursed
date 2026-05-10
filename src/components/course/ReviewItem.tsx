@@ -69,30 +69,19 @@ export function ReviewItem({
 }
 
 function ReviewStars({ value }: { value: number }) {
-  // Skala 1–10 → 5 gwiazdek (każda gwiazdka = 2 pkt). Wypełnienie połówkowe.
-  const full = Math.floor(value / 2);
-  const half = value % 2 === 1;
   return (
     <div className="flex items-center gap-1.5">
       <div className="flex gap-0.5">
-        {Array.from({ length: 5 }, (_, i) => {
-          const isFull = i < full;
-          const isHalf = i === full && half;
+        {Array.from({ length: 10 }, (_, i) => {
+          const isFull = i < value;
           return (
-            <span key={i} className="relative inline-flex">
-              <Star
-                className={cn(
-                  "size-3.5",
-                  isFull ? "fill-primary text-primary" : "text-muted-foreground/40",
-                )}
-              />
-              {isHalf && (
-                <Star
-                  className="absolute inset-0 size-3.5 fill-primary text-primary"
-                  style={{ clipPath: "inset(0 50% 0 0)" }}
-                />
+            <Star
+              key={i}
+              className={cn(
+                "size-3.5",
+                isFull ? "fill-primary text-primary" : "text-muted-foreground/40",
               )}
-            </span>
+            />
           );
         })}
       </div>

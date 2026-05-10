@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react";
 import { Code2, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -20,7 +21,7 @@ type Props = {
 };
 
 const IFRAME_WIDTH = 380;
-const IFRAME_HEIGHT = 108;
+const IFRAME_HEIGHT = 132;
 
 export function EmbedSnippet({ slug, siteUrl }: Props) {
   const [open, setOpen] = useState(false);
@@ -48,13 +49,16 @@ export function EmbedSnippet({ slug, siteUrl }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="w-full">
-          <Code2 className="size-4" />
-          Wstaw na swojej stronie
-        </Button>
+      <DialogTrigger
+        className={cn(
+          buttonVariants({ variant: "outline", size: "sm" }),
+          "w-full",
+        )}
+      >
+        <Code2 className="size-3.5" />
+        Wstaw na swojej stronie
       </DialogTrigger>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent className="grid-cols-[minmax(0,1fr)] sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Wstaw widget z oceną</DialogTitle>
           <DialogDescription>
@@ -63,7 +67,7 @@ export function EmbedSnippet({ slug, siteUrl }: Props) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-2">
+        <div className="min-w-0 space-y-2">
           <div className="text-xs uppercase tracking-wide text-muted-foreground">
             Podgląd
           </div>
@@ -79,7 +83,7 @@ export function EmbedSnippet({ slug, siteUrl }: Props) {
           </div>
         </div>
 
-        <div className="space-y-2">
+        <div className="min-w-0 space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xs uppercase tracking-wide text-muted-foreground">
               Kod HTML (iframe)
@@ -98,12 +102,12 @@ export function EmbedSnippet({ slug, siteUrl }: Props) {
               Kopiuj
             </Button>
           </div>
-          <pre className="max-h-40 overflow-auto rounded-md border border-border bg-muted/40 p-3 text-xs leading-relaxed">
+          <pre className="max-h-40 overflow-auto rounded-md border border-border bg-muted/40 p-3 text-xs leading-relaxed whitespace-pre-wrap break-all">
             <code>{iframeCode}</code>
           </pre>
         </div>
 
-        <details className="group rounded-md border border-border bg-muted/20">
+        <details className="group min-w-0 rounded-md border border-border bg-muted/20">
           <summary className="cursor-pointer list-none px-3 py-2 text-xs uppercase tracking-wide text-muted-foreground group-open:border-b group-open:border-border">
             JSON API (dla deweloperów)
           </summary>
@@ -113,7 +117,7 @@ export function EmbedSnippet({ slug, siteUrl }: Props) {
               jest otwarte; cache 5 min na kliencie, 1 h na CDN.
             </p>
             <div className="flex items-center gap-2">
-              <code className="flex-1 truncate rounded border border-border bg-background px-2 py-1 text-xs">
+              <code className="min-w-0 flex-1 truncate rounded border border-border bg-background px-2 py-1 text-xs">
                 {apiUrl}
               </code>
               <Button

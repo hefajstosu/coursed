@@ -259,6 +259,8 @@ export default async function CoursePage({ params, searchParams }: PageProps) {
             Przejdź do kursu →
           </a>
         )}
+
+        <EmbedSnippet slug={course.slug} siteUrl={SITE_URL} />
       </aside>
     </article>
   );
