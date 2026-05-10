@@ -269,7 +269,17 @@ export default async function CoursePage({ params, searchParams }: PageProps) {
 
         {similar.length > 0 && (
           <section className="space-y-4">
-            <h2 className="text-xl font-semibold tracking-tight">Podobne kursy</h2>
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <h2 className="text-xl font-semibold tracking-tight">Podobne kursy</h2>
+              {primaryCategory && (
+                <Link
+                  href={`/kategoria/${primaryCategory.slug}`}
+                  className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                >
+                  Wszystkie w „{primaryCategory.name}" →
+                </Link>
+              )}
+            </div>
             <div className="grid gap-4 sm:grid-cols-2">
               {similar.map((s) => (
                 <CourseCard key={s.id} course={s} />
