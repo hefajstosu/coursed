@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getCategoriesTree } from "@/server/queries/categories";
+import { pluralPl } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: "Kategorie kursów",
@@ -10,12 +11,6 @@ export const metadata: Metadata = {
 };
 
 export const dynamic = "force-dynamic";
-
-function pluralCourses(n: number) {
-  if (n === 1) return "kurs";
-  if (n >= 2 && n <= 4) return "kursy";
-  return "kursów";
-}
 
 export default async function CategoriesPage() {
   const tree = await getCategoriesTree();
@@ -27,9 +22,9 @@ export default async function CategoriesPage() {
       <header className="space-y-2">
         <h1 className="text-3xl font-semibold tracking-tight">Kategorie</h1>
         <p className="text-muted-foreground">
-          {tree.length} {tree.length === 1 ? "kategoria" : tree.length >= 2 && tree.length <= 4 ? "kategorie" : "kategorii"}
+          {tree.length} {pluralPl(tree.length, ["kategoria", "kategorie", "kategorii"])}
           {" · "}
-          {total} {pluralCourses(total)} łącznie.
+          {total} {pluralPl(total, ["kurs", "kursy", "kursów"])} łącznie.
         </p>
       </header>
 
@@ -54,7 +49,7 @@ export default async function CategoriesPage() {
                   </Link>
                 </h2>
                 <p className="text-xs text-muted-foreground">
-                  {c.totalCourses} {pluralCourses(c.totalCourses)}
+                  {c.totalCourses} {pluralPl(c.totalCourses, ["kurs", "kursy", "kursów"])}
                 </p>
               </div>
               {c.description && (

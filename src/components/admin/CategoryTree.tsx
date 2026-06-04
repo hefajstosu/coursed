@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CategoryForm, type CategoryFormDefaults } from "@/components/admin/CategoryForm";
+import { pluralPl } from "@/lib/format";
 
 type Cat = {
   id: string;
@@ -104,7 +105,7 @@ function CategoryRow({
           <span className="font-medium">{cat.name}</span>
           <span className="text-xs text-muted-foreground font-mono ml-2">/{cat.slug}</span>
           <span className="text-xs text-muted-foreground ml-3">
-            {cat._count.courses} kurs{cat._count.courses === 1 ? "" : cat._count.courses >= 2 && cat._count.courses <= 4 ? "y" : "ów"}
+            {cat._count.courses} {pluralPl(cat._count.courses, ["kurs", "kursy", "kursów"])}
           </span>
         </div>
         <button

@@ -43,13 +43,20 @@ export async function devSignInAs(formData: FormData) {
   redirect("/");
 }
 
-export async function signInWithGoogle() {
-  await signIn("google", { redirectTo: "/" });
+/** Akceptuje tylko ścieżki wewnętrzne — ochrona przed open-redirect. */
+function safeNext(value: FormDataEntryValue | null): string {
+  const v = typeof value === "string" ? value : "";
+  if (v.startsWith("/") && !v.startsWith("//") && !v.startsWith("/\\")) return v;
+  return "/";
+}
+
+export async function signInWithGoogle(formData: FormData) {
+  await signIn("google", { redirectTo: safeNext(formData.get("next")) });
 }
 
 export async function signInWithMagicLink(formData: FormData) {
   const email = z.string().email().parse(formData.get("email"));
-  await signIn("resend", { email, redirectTo: "/login/sprawdz-email" });
+  await signIn("resend", { email, redirectTo: safeNext(formData.get("next")) });
 }
 
 export async function logOut() {

@@ -31,12 +31,12 @@ export function MergeCourseDialog({
 
   useEffect(() => {
     if (!open) return;
-    if (q.trim().length < 2) {
-      setResults([]);
-      return;
-    }
     const ctrl = new AbortController();
     const t = setTimeout(async () => {
+      if (q.trim().length < 2) {
+        setResults([]);
+        return;
+      }
       try {
         const r = await fetch(`/admin/kursy/szukaj?q=${encodeURIComponent(q)}&exclude=${sourceId}`, {
           signal: ctrl.signal,
@@ -81,7 +81,7 @@ export function MergeCourseDialog({
         <header>
           <h3 className="text-lg font-semibold">Scal kurs w inny</h3>
           <p className="text-xs text-muted-foreground mt-1">
-            Wybierz kurs docelowy. Oceny i opinie z „{sourceTitle}" zostaną przeniesione (konflikty
+            Wybierz kurs docelowy. Oceny i opinie z „{sourceTitle}” zostaną przeniesione (konflikty
             unique courseId+userId są pomijane). Stary slug zacznie przekierowywać 301 na nowy.
           </p>
         </header>

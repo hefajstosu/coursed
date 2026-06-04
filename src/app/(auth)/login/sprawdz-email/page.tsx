@@ -13,7 +13,7 @@ export default function CheckEmailPage() {
         Wysłaliśmy magic link na podany adres email. Kliknij w niego, aby się zalogować.
       </p>
       <p className="text-xs text-muted-foreground">
-        Link może trafić do folderu „spam".
+        Link może trafić do folderu „spam”.
       </p>
       <Link href="/login" className="inline-block text-sm underline-offset-4 hover:underline">
         ← Wróć do logowania

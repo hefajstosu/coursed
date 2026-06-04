@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getCourseEmbed, parseCachedRatings } from "@/server/queries/courses";
 import { absoluteUrl } from "@/lib/seo";
+import { pluralPl } from "@/lib/format";
 
 export const revalidate = 3600;
 
@@ -53,11 +54,7 @@ export default async function EmbedBadgePage({ params }: PageProps) {
             </span>
             <span className="mt-0.5 text-xs text-muted-foreground">
               {course.ratingsCount}{" "}
-              {course.ratingsCount === 1
-                ? "ocena"
-                : course.ratingsCount >= 2 && course.ratingsCount <= 4
-                  ? "oceny"
-                  : "ocen"}
+              {pluralPl(course.ratingsCount, ["ocena", "oceny", "ocen"])}
               {ratings?.user.avg !== null && ratings?.user.avg !== undefined && (
                 <> · użytkownicy {fmt(ratings.user.avg)}</>
               )}

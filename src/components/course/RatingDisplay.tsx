@@ -1,5 +1,6 @@
 import type { ComputedRatings } from "@/lib/ratings";
 import { cn } from "@/lib/utils";
+import { pluralPl } from "@/lib/format";
 
 export function RatingDisplay({ ratings }: { ratings: ComputedRatings | null }) {
   if (!ratings || ratings.flags.noRatings) {
@@ -82,7 +83,7 @@ function RatingCell({
         {tooFew
           ? `${count} ocen — za mało`
           : count !== undefined
-            ? `${count} ${count === 1 ? "ocena" : count >= 2 && count <= 4 ? "oceny" : "ocen"}`
+            ? `${count} ${pluralPl(count, ["ocena", "oceny", "ocen"])}`
             : subline}
       </div>
     </div>

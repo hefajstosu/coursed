@@ -100,7 +100,7 @@ export default async function CoursePage({ params, searchParams }: PageProps) {
               "@type": "Rating",
               ratingValue: r.rating,
               bestRating: 10,
-              worstRating: 0,
+              worstRating: 1,
             },
           }
         : {}),
@@ -120,7 +120,7 @@ export default async function CoursePage({ params, searchParams }: PageProps) {
             "@type": "AggregateRating",
             ratingValue: ratings.overall,
             bestRating: 10,
-            worstRating: 0,
+            worstRating: 1,
             ratingCount:
               (ratings.user.count ?? 0) + (ratings.critic.count ?? 0),
           }
@@ -276,7 +276,7 @@ export default async function CoursePage({ params, searchParams }: PageProps) {
                   href={`/kategoria/${primaryCategory.slug}`}
                   className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
                 >
-                  Wszystkie w „{primaryCategory.name}" →
+                  Wszystkie w „{primaryCategory.name}” →
                 </Link>
               )}
             </div>

@@ -23,7 +23,7 @@ export async function acceptCourseRequest(input: { requestId: string }): Promise
     if (req.status !== "NEW") return { ok: false, error: "Zgłoszenie zostało już rozpatrzone." };
 
     // Wygeneruj unikalny slug
-    let base = slugify(req.title) || `kurs-${req.id.slice(0, 6)}`;
+    const base = slugify(req.title) || `kurs-${req.id.slice(0, 6)}`;
     let slug = base;
     let n = 1;
     while (await db.course.findUnique({ where: { slug }, select: { id: true } })) {

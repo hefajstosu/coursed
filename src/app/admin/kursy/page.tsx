@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { listAdminCourses } from "@/server/queries/admin";
-import { formatLabels } from "@/lib/format";
+import { formatLabels, pluralPl } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Kursy" };
 export const dynamic = "force-dynamic";
@@ -36,7 +36,7 @@ export default async function AdminCoursesPage({
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Kursy</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {courses.length} {courses.length === 1 ? "wynik" : "wyników"}
+            {courses.length} {pluralPl(courses.length, ["wynik", "wyniki", "wyników"])}
             {status && ` · status: ${status}`}
             {q && ` · „${q}”`}.
           </p>

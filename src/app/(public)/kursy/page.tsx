@@ -9,7 +9,7 @@ import {
   type CourseSort,
 } from "@/server/queries/courses";
 import { getTopLevelCategories } from "@/server/queries/categories";
-import { formatLabels, levelLabels, languageLabels } from "@/lib/format";
+import { formatLabels, levelLabels, languageLabels, pluralPl } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: "Wszystkie kursy",
@@ -78,7 +78,7 @@ export default async function CoursesPage({
           {q ? `Wyniki dla „${q}"` : "Wszystkie kursy"}
         </h1>
         <p className="text-sm text-muted-foreground">
-          {total} {total === 1 ? "kurs" : total >= 2 && total <= 4 ? "kursy" : "kursów"}
+          {total} {pluralPl(total, ["kurs", "kursy", "kursów"])}
           {q ? ` pasuje do wyszukiwania.` : ` w katalogu.`}
         </p>
       </header>

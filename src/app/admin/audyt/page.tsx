@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
+import { pluralPl } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Audit log" };
 export const dynamic = "force-dynamic";
@@ -114,7 +115,7 @@ export default async function AuditLogPage({
         <h1 className="text-2xl font-semibold tracking-tight">Audit log</h1>
         <p className="text-sm text-muted-foreground mt-1">
           {total.toLocaleString("pl-PL")}{" "}
-          {total === 1 ? "wpis" : total < 5 ? "wpisy" : "wpisów"}
+          {pluralPl(total, ["wpis", "wpisy", "wpisów"])}
           {(entity || action || actor || entityId) && " (filtrowane)"}.
         </p>
       </header>

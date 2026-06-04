@@ -64,10 +64,6 @@ export function CourseForm({
   const [slugTouched, setSlugTouched] = useState(mode === "edit");
 
   useEffect(() => {
-    if (!slugTouched) setSlug(slugify(title));
-  }, [title, slugTouched]);
-
-  useEffect(() => {
     if (state.ok && mode === "edit") {
       toast.success("Zapisano zmiany.");
     } else if (state.error && !state.fieldErrors) {
@@ -83,7 +79,10 @@ export function CourseForm({
           name="title"
           required
           value={title}
-          onChange={setTitle}
+          onChange={(v) => {
+            setTitle(v);
+            if (!slugTouched) setSlug(slugify(v));
+          }}
           error={state.fieldErrors?.title}
           disabled={pending}
         />

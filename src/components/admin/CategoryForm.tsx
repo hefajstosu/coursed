@@ -51,10 +51,6 @@ export function CategoryForm({
   const [slugTouched, setSlugTouched] = useState(mode === "edit");
 
   useEffect(() => {
-    if (!slugTouched) setSlug(slugify(name));
-  }, [name, slugTouched]);
-
-  useEffect(() => {
     if (state.ok === true) {
       toast.success(mode === "create" ? "Kategoria utworzona." : "Zapisano.");
       router.refresh();
@@ -78,7 +74,11 @@ export function CategoryForm({
           name="name"
           required
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => {
+            const v = e.target.value;
+            setName(v);
+            if (!slugTouched) setSlug(slugify(v));
+          }}
           aria-invalid={!!fieldErrors?.name}
           disabled={pending}
         />

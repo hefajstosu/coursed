@@ -122,7 +122,9 @@ function truncate(s: string, n: number) {
 }
 
 function courseLabel(n: number) {
+  const m10 = n % 10;
+  const m100 = n % 100;
   if (n === 1) return "kurs";
-  if (n >= 2 && n <= 4) return "kursy";
+  if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return "kursy";
   return "kursów";
 }

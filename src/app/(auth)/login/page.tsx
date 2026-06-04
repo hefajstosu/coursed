@@ -15,9 +15,17 @@ export const metadata: Metadata = {
   title: "Zaloguj się",
 };
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
+  const { next } = await searchParams;
+  const safeNextPath =
+    next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
+
   const session = await auth();
-  if (session?.user) redirect("/");
+  if (session?.user) redirect(safeNextPath);
 
   const isDev = process.env.NODE_ENV === "development";
   const hasGoogle = !!process.env.AUTH_GOOGLE_ID;
@@ -42,6 +50,7 @@ export default async function LoginPage() {
       <div className="space-y-4 rounded-lg border border-border bg-card p-6">
         {hasGoogle ? (
           <form action={signInWithGoogle}>
+            <input type="hidden" name="next" value={safeNextPath} />
             <Button type="submit" variant="outline" className="w-full">
               Zaloguj z Google
             </Button>
@@ -55,6 +64,7 @@ export default async function LoginPage() {
         <Separator>lub</Separator>
 
         <form action={signInWithMagicLink} className="space-y-3">
+          <input type="hidden" name="next" value={safeNextPath} />
           <div className="space-y-1.5">
             <Label htmlFor="email">Email</Label>
             <Input

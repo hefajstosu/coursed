@@ -218,7 +218,7 @@ model Rating {
   id        String      @id @default(cuid())
   courseId  String
   userId    String
-  value     Int         // 0..10
+  value     Int         // 1..10
   kind      ContentKind // USER lub CRITIC (snapshot z roli usera w momencie zapisu)
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt

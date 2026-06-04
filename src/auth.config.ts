@@ -5,5 +5,6 @@ export default {
   providers: [Google],
   pages: {
     signIn: "/login",
+    verifyRequest: "/login/sprawdz-email",
   },
 } satisfies NextAuthConfig;

@@ -5,7 +5,7 @@ import { searchCourses, parseCachedRatings } from "@/server/queries/courses";
 import { SearchHighlight } from "@/components/course/SearchHighlight";
 import { RatingBadge } from "@/components/course/RatingBadge";
 import { Pagination } from "@/components/site/Pagination";
-import { formatLabels, levelLabels, languageLabel } from "@/lib/format";
+import { formatLabels, levelLabels, languageLabel, pluralPl } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: "Wyszukiwanie",
@@ -74,7 +74,7 @@ export default async function SearchPage({
         <p className="text-sm text-muted-foreground">
           {total === 0
             ? `Brak wyników dla „${q}".`
-            : `${total} ${total === 1 ? "wynik" : total >= 2 && total <= 4 ? "wyniki" : "wyników"} dla „${q}".`}
+            : `${total} ${pluralPl(total, ["wynik", "wyniki", "wyników"])} dla „${q}".`}
         </p>
       </header>
 

@@ -10,6 +10,7 @@ import {
   DeleteReviewButton,
 } from "@/components/profile/ActivityActions";
 import { cn } from "@/lib/utils";
+import { pluralPl } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: "Mój profil",
@@ -43,8 +44,8 @@ export default async function ProfilPage() {
           {session.user.name ?? "Mój profil"}
         </h1>
         <p className="text-sm text-muted-foreground">
-          {session.user.email} · {ratingCount} {ratingCount === 1 ? "ocena" : "ocen"} ·{" "}
-          {reviewCount} {reviewCount === 1 ? "opinia" : "opinii"}
+          {session.user.email} · {ratingCount} {pluralPl(ratingCount, ["ocena", "oceny", "ocen"])} ·{" "}
+          {reviewCount} {pluralPl(reviewCount, ["opinia", "opinie", "opinii"])}
         </p>
       </header>
 

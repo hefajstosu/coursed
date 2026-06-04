@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { requireRole } from "@/lib/auth-helpers";
 import { db } from "@/lib/db";
 import { UserRoleSelect } from "@/components/admin/UserRoleSelect";
+import { pluralPl } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Użytkownicy" };
 export const dynamic = "force-dynamic";
@@ -44,7 +45,7 @@ export default async function AdminUsersPage({
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Użytkownicy</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {users.length} {users.length === 1 ? "wynik" : "wyników"}
+            {users.length} {pluralPl(users.length, ["wynik", "wyniki", "wyników"])}
             {q && ` dla „${q}”`}.
           </p>
         </div>

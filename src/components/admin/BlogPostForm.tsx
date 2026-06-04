@@ -46,10 +46,6 @@ export function BlogPostForm({
   const [slugTouched, setSlugTouched] = useState(mode === "edit");
 
   useEffect(() => {
-    if (!slugTouched) setSlug(slugify(title));
-  }, [title, slugTouched]);
-
-  useEffect(() => {
     if (state.ok && mode === "edit") {
       toast.success("Zapisano.");
     } else if (state.error && !state.fieldErrors) {
@@ -68,7 +64,11 @@ export function BlogPostForm({
           name="title"
           required
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) => {
+            const v = e.target.value;
+            setTitle(v);
+            if (!slugTouched) setSlug(slugify(v));
+          }}
           aria-invalid={!!state.fieldErrors?.title}
           disabled={pending}
         />

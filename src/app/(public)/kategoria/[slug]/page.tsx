@@ -6,6 +6,7 @@ import { Pagination } from "@/components/site/Pagination";
 import { getCategoryBySlug } from "@/server/queries/categories";
 import { listCourses } from "@/server/queries/courses";
 import { breadcrumbJsonLd } from "@/lib/seo";
+import { pluralPl } from "@/lib/format";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -67,7 +68,7 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
           <p className="text-muted-foreground max-w-2xl">{category.description}</p>
         )}
         <p className="text-sm text-muted-foreground">
-          {total} {total === 1 ? "kurs" : total >= 2 && total <= 4 ? "kursy" : "kursów"} w tej kategorii.
+          {total} {pluralPl(total, ["kurs", "kursy", "kursów"])} w tej kategorii.
         </p>
       </header>
 
