@@ -24,7 +24,7 @@ import {
   type ReviewSort,
 } from "@/server/queries/courses";
 import { formatLabels, levelLabels, languageLabel } from "@/lib/format";
-import { absoluteUrl, breadcrumbJsonLd, SITE_URL } from "@/lib/seo";
+import { absoluteUrl, breadcrumbJsonLd, jsonLdSafe, SITE_URL } from "@/lib/seo";
 import { auth } from "@/auth";
 import type { ContentKind } from "@/generated/prisma/enums";
 
@@ -171,16 +171,16 @@ export default async function CoursePage({ params, searchParams }: PageProps) {
     <article className="mx-auto max-w-6xl px-4 py-10 grid gap-8 lg:grid-cols-[1fr_320px]">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(courseJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdSafe(courseJsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdSafe(breadcrumbs) }}
       />
       {similarItemList && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(similarItemList) }}
+          dangerouslySetInnerHTML={{ __html: jsonLdSafe(similarItemList) }}
         />
       )}
 

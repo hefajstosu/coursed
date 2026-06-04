@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { jsonLdSafe } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "Najczęstsze pytania",
@@ -114,7 +115,7 @@ export default function FaqPage() {
     <article className="mx-auto max-w-3xl px-4 py-10 space-y-10">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_JSON_LD) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdSafe(FAQ_JSON_LD) }}
       />
       <header className="space-y-2">
         <h1 className="text-3xl font-semibold tracking-tight">

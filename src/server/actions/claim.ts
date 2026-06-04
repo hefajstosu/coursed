@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { rateLimit, LIMITS } from "@/lib/rate-limit";
 
 const schema = z.object({
   courseId: z.string().min(1),
@@ -19,6 +20,9 @@ export async function submitCourseClaim(input: {
     const session = await auth();
     if (!session?.user) return { ok: false, error: "Musisz być zalogowany." };
     if (session.user.banned) return { ok: false, error: "Twoje konto zostało zawieszone." };
+
+    const rl = await rateLimit(`claim:${session.user.id}`, LIMITS.courseRequest);
+    if (!rl.ok) return { ok: false, error: "Za dużo zgłoszeń. Spróbuj później." };
 
     const data = schema.parse({
       courseId: input.courseId,

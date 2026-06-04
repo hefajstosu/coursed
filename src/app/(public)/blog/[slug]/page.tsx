@@ -4,7 +4,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getBlogPostBySlug } from "@/server/queries/blog";
 import { Markdown } from "@/lib/markdown";
-import { breadcrumbJsonLd } from "@/lib/seo";
+import { breadcrumbJsonLd, jsonLdSafe } from "@/lib/seo";
 
 type PageProps = { params: Promise<{ slug: string }> };
 
@@ -60,11 +60,11 @@ export default async function BlogPostPage({ params }: PageProps) {
     <article className="mx-auto max-w-3xl px-4 py-10 space-y-8">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdSafe(jsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdSafe(breadcrumbs) }}
       />
 
       <nav className="text-sm">

@@ -36,6 +36,15 @@ export async function sendEmail({
   }
 }
 
+/** Escape wartości wstawianych w treść HTML maila (anty-injection). */
+function esc(s: string): string {
+  return s
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
 function layout(heading: string, bodyHtml: string): string {
   return `<div style="font-family:system-ui,-apple-system,sans-serif;max-width:520px;margin:0 auto;color:#18181b">
     <div style="background:#18181b;color:#fff;padding:14px 20px;border-radius:8px 8px 0 0;font-weight:700">coursed.pl</div>
@@ -62,7 +71,7 @@ export function reviewModeratedEmail(input: {
     html: layout(
       "Zmiana statusu Twojej opinii",
       `<p style="font-size:14px;line-height:1.6">Twoja opinia o kursie
-        <a href="${absoluteUrl(`/kursy/${input.courseSlug}`)}" style="color:#18181b">${input.courseTitle}</a>
+        <a href="${absoluteUrl(`/kursy/${input.courseSlug}`)}" style="color:#18181b">${esc(input.courseTitle)}</a>
         została <strong>${what}</strong>.</p>
        <p style="font-size:14px;line-height:1.6">Zasady publikacji i moderacji opisuje
         <a href="${absoluteUrl("/zasady")}" style="color:#18181b">strona Zasady</a>.</p>`,
@@ -82,9 +91,9 @@ export function courseRequestDecisionEmail(input: {
     html: layout(
       accepted ? "Dziękujemy za zgłoszenie kursu" : "Decyzja w sprawie zgłoszenia",
       accepted
-        ? `<p style="font-size:14px;line-height:1.6">Zgłoszony przez Ciebie kurs <strong>${input.title}</strong>
+        ? `<p style="font-size:14px;line-height:1.6">Zgłoszony przez Ciebie kurs <strong>${esc(input.title)}</strong>
             został przyjęty do katalogu coursed.pl i wkrótce pojawi się publicznie po opracowaniu przez redakcję.</p>`
-        : `<p style="font-size:14px;line-height:1.6">Po weryfikacji zgłoszenie kursu <strong>${input.title}</strong>
+        : `<p style="font-size:14px;line-height:1.6">Po weryfikacji zgłoszenie kursu <strong>${esc(input.title)}</strong>
             nie zostało przyjęte. Jeśli uważasz, że to pomyłka, odpowiedz na tę wiadomość.</p>`,
     ),
   };
@@ -110,7 +119,7 @@ export function newReviewEmail(input: { courseTitle: string; courseSlug: string 
     html: layout(
       "Nowa opinia o obserwowanym kursie",
       `<p style="font-size:14px;line-height:1.6">Pojawiła się nowa opinia o kursie
-        <a href="${absoluteUrl(`/kursy/${input.courseSlug}#opinie`)}" style="color:#18181b">${input.courseTitle}</a>,
+        <a href="${absoluteUrl(`/kursy/${input.courseSlug}#opinie`)}" style="color:#18181b">${esc(input.courseTitle)}</a>,
         który obserwujesz.</p>
        <p style="font-size:12px;color:#71717a">Aby przestać obserwować, otwórz stronę kursu i kliknij „Obserwujesz".</p>`,
     ),

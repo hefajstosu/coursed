@@ -5,7 +5,7 @@ import { CourseCard } from "@/components/course/CourseCard";
 import { Pagination } from "@/components/site/Pagination";
 import { getCategoryBySlug } from "@/server/queries/categories";
 import { listCourses } from "@/server/queries/courses";
-import { breadcrumbJsonLd } from "@/lib/seo";
+import { breadcrumbJsonLd, jsonLdSafe } from "@/lib/seo";
 import { pluralPl } from "@/lib/format";
 
 type PageProps = {
@@ -49,7 +49,7 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
     <div className="mx-auto max-w-6xl px-4 py-10 space-y-8">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdSafe(breadcrumbs) }}
       />
       <header className="space-y-3">
         {category.parent && (
