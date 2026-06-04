@@ -43,6 +43,35 @@ export function RatingDisplay({ ratings }: { ratings: ComputedRatings | null }) 
           Niektóre średnie nie są wyświetlane, ponieważ liczba ocen jest zbyt mała.
         </p>
       )}
+
+      {ratings.aspects &&
+        (ratings.aspects.content !== null ||
+          ratings.aspects.instructor !== null ||
+          ratings.aspects.worth !== null) && (
+          <div className="space-y-2 border-t border-border pt-3">
+            <div className="text-xs uppercase tracking-wide text-muted-foreground">
+              Oceny szczegółowe
+            </div>
+            <AspectRow label="Treść" value={ratings.aspects.content} />
+            <AspectRow label="Prowadzący" value={ratings.aspects.instructor} />
+            <AspectRow label="Cena / jakość" value={ratings.aspects.worth} />
+          </div>
+        )}
+    </div>
+  );
+}
+
+function AspectRow({ label, value }: { label: string; value: number | null }) {
+  if (value === null) return null;
+  return (
+    <div className="flex items-center gap-3 text-sm">
+      <span className="w-28 shrink-0 text-muted-foreground">{label}</span>
+      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+        <div className="h-full rounded-full bg-primary/70" style={{ width: `${value * 10}%` }} />
+      </div>
+      <span className="w-10 shrink-0 text-right font-medium tabular-nums">
+        {value.toFixed(1)}
+      </span>
     </div>
   );
 }

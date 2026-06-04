@@ -3,7 +3,7 @@
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { setReviewStatus, resolveReport } from "@/server/actions/admin/reviews";
+import { setReviewStatus, resolveReport, setReviewVerified } from "@/server/actions/admin/reviews";
 
 const STATUS_LABEL: Record<string, string> = {
   VISIBLE: "Widoczna",
@@ -61,6 +61,43 @@ export function ReviewStatusActions({
         );
       })}
     </div>
+  );
+}
+
+export function VerifyButton({
+  reviewId,
+  verified,
+}: {
+  reviewId: string;
+  verified: boolean;
+}) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+
+  const toggle = () =>
+    startTransition(async () => {
+      const res = await setReviewVerified({ reviewId, verified: !verified });
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success(!verified ? "Oznaczono jako zweryfikowaną." : "Cofnięto weryfikację.");
+      router.refresh();
+    });
+
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      disabled={isPending}
+      className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs transition-colors disabled:opacity-50 ${
+        verified
+          ? "border-emerald-500/40 text-emerald-700 dark:text-emerald-400"
+          : "border-input text-muted-foreground hover:bg-muted"
+      }`}
+    >
+      {verified ? "✓ Zweryfikowana" : "Zweryfikuj"}
+    </button>
   );
 }
 

@@ -1,8 +1,9 @@
-import { Star } from "lucide-react";
+import { Star, BadgeCheck } from "lucide-react";
 import type { ContentKind, UserRole } from "@/generated/prisma/enums";
 import { cn } from "@/lib/utils";
 import { VoteButtons } from "./VoteButtons";
 import { ReportButton } from "./ReportButton";
+import { ReviewResponseForm } from "./ReviewResponseForm";
 
 type ReviewItemProps = {
   reviewId: string;
@@ -12,6 +13,9 @@ type ReviewItemProps = {
   unhelpfulCount: number;
   rating: number | null;
   kind: keyof typeof ContentKind;
+  verified: boolean;
+  response: { body: string; createdAt: Date; author: { name: string | null } } | null;
+  canRespond: boolean;
   user: { name: string | null; image: string | null; role: keyof typeof UserRole };
   vote: 1 | -1 | null;
   isLoggedIn: boolean;
@@ -25,6 +29,9 @@ export function ReviewItem({
   helpfulCount,
   unhelpfulCount,
   rating,
+  verified,
+  response,
+  canRespond,
   user,
   vote,
   isLoggedIn,
@@ -42,6 +49,15 @@ export function ReviewItem({
                 Krytyk
               </span>
             )}
+            {verified && (
+              <span
+                title="Opinia zweryfikowana przez redakcję"
+                className="inline-flex items-center gap-1 rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-emerald-700 dark:text-emerald-400"
+              >
+                <BadgeCheck className="size-3" />
+                Zweryfikowana
+              </span>
+            )}
           </div>
           {rating !== null && <ReviewStars value={rating} />}
         </div>
@@ -54,6 +70,28 @@ export function ReviewItem({
         </time>
       </header>
       <p className="text-sm leading-relaxed whitespace-pre-line">{body}</p>
+      {response && (
+        <div className="rounded-md border-l-2 border-primary/50 bg-muted/40 p-3">
+          <div className="mb-1 text-xs font-semibold text-foreground">
+            Odpowiedź redakcji
+            {response.author.name ? ` · ${response.author.name}` : ""}
+            <time
+              className="ml-2 font-normal text-muted-foreground"
+              dateTime={response.createdAt.toISOString()}
+            >
+              {response.createdAt.toLocaleDateString("pl-PL", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </time>
+          </div>
+          <p className="text-sm leading-relaxed whitespace-pre-line text-foreground/85">
+            {response.body}
+          </p>
+        </div>
+      )}
+
       <footer className="flex items-center gap-2">
         <VoteButtons
           reviewId={reviewId}
@@ -64,6 +102,12 @@ export function ReviewItem({
         />
         <ReportButton reviewId={reviewId} isLoggedIn={isLoggedIn} />
       </footer>
+
+      {canRespond && (
+        <div className="border-t border-border pt-3">
+          <ReviewResponseForm reviewId={reviewId} initialBody={response?.body ?? null} />
+        </div>
+      )}
     </article>
   );
 }

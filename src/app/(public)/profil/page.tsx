@@ -9,6 +9,7 @@ import {
   DeleteRatingButton,
   DeleteReviewButton,
 } from "@/components/profile/ActivityActions";
+import { AccountActions } from "@/components/profile/AccountActions";
 import { cn } from "@/lib/utils";
 import { pluralPl } from "@/lib/format";
 
@@ -132,6 +133,17 @@ export default async function ProfilPage() {
           ))}
         </ul>
       )}
+
+      <section className="space-y-3 rounded-lg border border-border p-5">
+        <div className="space-y-1">
+          <h2 className="text-lg font-semibold tracking-tight">Konto i dane</h2>
+          <p className="text-sm text-muted-foreground">
+            Zgodnie z RODO możesz pobrać kopię swoich danych lub trwale usunąć
+            konto wraz z całą aktywnością.
+          </p>
+        </div>
+        <AccountActions />
+      </section>
     </div>
   );
 }

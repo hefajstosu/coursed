@@ -9,17 +9,29 @@ import { Label } from "@/components/ui/label";
 import { addReview } from "@/server/actions/courses";
 import { cn } from "@/lib/utils";
 
+type Aspects = { content: number | null; instructor: number | null; worth: number | null };
+
 type Props = {
   courseId: string;
   initialBody: string | null;
   initialRating: number | null;
+  initialAspects?: Aspects;
   isLoggedIn: boolean;
 };
 
-export function ReviewForm({ courseId, initialBody, initialRating, isLoggedIn }: Props) {
+export function ReviewForm({
+  courseId,
+  initialBody,
+  initialRating,
+  initialAspects,
+  isLoggedIn,
+}: Props) {
   const [body, setBody] = useState(initialBody ?? "");
   const [rating, setRating] = useState<number | null>(initialRating);
   const [hover, setHover] = useState<number | null>(null);
+  const [aspects, setAspects] = useState<Aspects>(
+    initialAspects ?? { content: null, instructor: null, worth: null },
+  );
   const [isPending, startTransition] = useTransition();
   const [open, setOpen] = useState(initialBody !== null);
 
@@ -52,7 +64,14 @@ export function ReviewForm({ courseId, initialBody, initialRating, isLoggedIn }:
       return;
     }
     startTransition(async () => {
-      const res = await addReview({ courseId, body: body.trim(), value: rating });
+      const res = await addReview({
+        courseId,
+        body: body.trim(),
+        value: rating,
+        valueContent: aspects.content,
+        valueInstructor: aspects.instructor,
+        valueWorth: aspects.worth,
+      });
       if (!res.ok) {
         toast.error(res.error);
       } else {
@@ -99,6 +118,32 @@ export function ReviewForm({ courseId, initialBody, initialRating, isLoggedIn }:
         </div>
       </div>
 
+      <details className="rounded-md border border-border">
+        <summary className="cursor-pointer px-3 py-2 text-xs uppercase tracking-wide text-muted-foreground">
+          Oceny szczegółowe (opcjonalne)
+        </summary>
+        <div className="space-y-2 border-t border-border p-3">
+          <AspectStars
+            label="Treść"
+            value={aspects.content}
+            onChange={(v) => setAspects((a) => ({ ...a, content: v }))}
+            disabled={isPending}
+          />
+          <AspectStars
+            label="Prowadzący"
+            value={aspects.instructor}
+            onChange={(v) => setAspects((a) => ({ ...a, instructor: v }))}
+            disabled={isPending}
+          />
+          <AspectStars
+            label="Cena / jakość"
+            value={aspects.worth}
+            onChange={(v) => setAspects((a) => ({ ...a, worth: v }))}
+            disabled={isPending}
+          />
+        </div>
+      </details>
+
       <div className="space-y-1.5">
         <Label htmlFor="review-body" className="text-xs uppercase tracking-wide text-muted-foreground">
           {initialBody ? "Twoja opinia (edytuj)" : "Twoja opinia"}
@@ -128,6 +173,48 @@ export function ReviewForm({ courseId, initialBody, initialRating, isLoggedIn }:
           </Button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function AspectStars({
+  label,
+  value,
+  onChange,
+  disabled,
+}: {
+  label: string;
+  value: number | null;
+  onChange: (v: number | null) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="w-28 shrink-0 text-xs text-muted-foreground">{label}</span>
+      <div className="flex gap-0.5">
+        {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+          <button
+            key={n}
+            type="button"
+            disabled={disabled}
+            aria-label={`${label}: ${n}/10`}
+            onClick={() => onChange(value === n ? null : n)}
+            className="rounded disabled:cursor-wait"
+          >
+            <Star
+              className={cn(
+                "size-4 transition-colors",
+                value !== null && n <= value
+                  ? "fill-primary text-primary"
+                  : "text-muted-foreground/40",
+              )}
+            />
+          </button>
+        ))}
+      </div>
+      {value !== null && (
+        <span className="text-xs tabular-nums text-muted-foreground">{value}</span>
+      )}
     </div>
   );
 }

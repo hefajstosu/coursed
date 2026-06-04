@@ -74,6 +74,9 @@ export async function addReview(input: {
   courseId: string;
   body: string;
   value: number;
+  valueContent?: number | null;
+  valueInstructor?: number | null;
+  valueWorth?: number | null;
 }): Promise<ActionResult> {
   try {
     const user = await requireAuthUser();
@@ -105,8 +108,22 @@ export async function addReview(input: {
     await db.$transaction([
       db.rating.upsert({
         where: { courseId_userId: { courseId: course.id, userId: user.id } },
-        create: { courseId: course.id, userId: user.id, value: data.value, kind },
-        update: { value: data.value, kind },
+        create: {
+          courseId: course.id,
+          userId: user.id,
+          value: data.value,
+          kind,
+          valueContent: data.valueContent ?? null,
+          valueInstructor: data.valueInstructor ?? null,
+          valueWorth: data.valueWorth ?? null,
+        },
+        update: {
+          value: data.value,
+          kind,
+          valueContent: data.valueContent ?? null,
+          valueInstructor: data.valueInstructor ?? null,
+          valueWorth: data.valueWorth ?? null,
+        },
       }),
       db.review.upsert({
         where: { courseId_userId: { courseId: course.id, userId: user.id } },

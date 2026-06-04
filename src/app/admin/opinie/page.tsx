@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { ReviewStatusActions, ReportActions } from "@/components/admin/ReviewActions";
+import { ReviewStatusActions, ReportActions, VerifyButton } from "@/components/admin/ReviewActions";
 import { kindLabels } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Opinie" };
@@ -146,7 +146,10 @@ async function ReviewsTab({ status }: { status?: string }) {
                   </div>
                   <p className="text-sm text-foreground/90 whitespace-pre-line">{r.body}</p>
                 </div>
-                <ReviewStatusActions reviewId={r.id} current={r.status} />
+                <div className="flex flex-col items-end gap-2">
+                  <ReviewStatusActions reviewId={r.id} current={r.status} />
+                  <VerifyButton reviewId={r.id} verified={r.verified} />
+                </div>
               </div>
             </li>
           ))}

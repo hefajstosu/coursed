@@ -247,37 +247,71 @@ export async function getCourseBySlug(slug: string) {
   return { ...course, redirectToSlug: null as string | null };
 }
 
+export type ReviewSort = "helpful" | "newest";
+export const REVIEWS_PER_PAGE = 10;
+
 export async function getCourseReviews(
   courseId: string,
-  kind?: keyof typeof ContentKind,
+  opts: { kind?: keyof typeof ContentKind; sort?: ReviewSort; page?: number } = {},
 ) {
-  const reviews = await db.review.findMany({
-    where: {
-      courseId,
-      status: "VISIBLE",
-      ...(kind && { kind }),
-    },
-    orderBy: [{ helpfulCount: "desc" }, { createdAt: "desc" }],
-    include: {
-      user: { select: { name: true, image: true, role: true } },
-    },
-  });
+  const { kind, sort = "helpful", page = 1 } = opts;
+  const where = {
+    courseId,
+    status: "VISIBLE" as const,
+    ...(kind && { kind }),
+  };
 
-  if (reviews.length === 0) return [];
+  const orderBy =
+    sort === "newest"
+      ? [{ createdAt: "desc" as const }]
+      : [{ helpfulCount: "desc" as const }, { createdAt: "desc" as const }];
+
+  const [reviews, total] = await Promise.all([
+    db.review.findMany({
+      where,
+      orderBy,
+      skip: (page - 1) * REVIEWS_PER_PAGE,
+      take: REVIEWS_PER_PAGE,
+      include: {
+        user: { select: { name: true, image: true, role: true } },
+        response: {
+          select: { body: true, createdAt: true, author: { select: { name: true } } },
+        },
+      },
+    }),
+    db.review.count({ where }),
+  ]);
+
+  if (reviews.length === 0) {
+    return { reviews: [], total, page, perPage: REVIEWS_PER_PAGE };
+  }
 
   const ratings = await db.rating.findMany({
-    where: {
-      courseId,
-      userId: { in: reviews.map((r) => r.userId) },
-    },
+    where: { courseId, userId: { in: reviews.map((r) => r.userId) } },
     select: { userId: true, value: true },
   });
   const ratingByUser = new Map(ratings.map((r) => [r.userId, r.value]));
 
-  return reviews.map((r) => ({
-    ...r,
-    rating: ratingByUser.get(r.userId) ?? null,
-  }));
+  return {
+    reviews: reviews.map((r) => ({ ...r, rating: ratingByUser.get(r.userId) ?? null })),
+    total,
+    page,
+    perPage: REVIEWS_PER_PAGE,
+  };
+}
+
+/** #6 Rozkład ocen: liczba ocen dla każdej wartości 10..1. */
+export async function getRatingDistribution(courseId: string) {
+  const rows = await db.rating.groupBy({
+    by: ["value"],
+    where: { courseId },
+    _count: { value: true },
+  });
+  const counts = new Map(rows.map((r) => [r.value, r._count.value]));
+  return Array.from({ length: 10 }, (_, i) => {
+    const value = 10 - i;
+    return { value, count: counts.get(value) ?? 0 };
+  });
 }
 
 export function parseCachedRatings(raw: unknown): ComputedRatings | null {
@@ -424,7 +458,12 @@ export async function getUserCourseInteraction(courseId: string, userId: string)
   const [rating, review, votes] = await Promise.all([
     db.rating.findUnique({
       where: { courseId_userId: { courseId, userId } },
-      select: { value: true },
+      select: {
+        value: true,
+        valueContent: true,
+        valueInstructor: true,
+        valueWorth: true,
+      },
     }),
     db.review.findUnique({
       where: { courseId_userId: { courseId, userId } },
@@ -438,6 +477,11 @@ export async function getUserCourseInteraction(courseId: string, userId: string)
 
   return {
     userRating: rating?.value ?? null,
+    userAspects: {
+      content: rating?.valueContent ?? null,
+      instructor: rating?.valueInstructor ?? null,
+      worth: rating?.valueWorth ?? null,
+    },
     userReviewBody: review?.body ?? null,
     userReviewStatus: review?.status ?? null,
     voteByReview: new Map(votes.map((v) => [v.reviewId, v.value])),

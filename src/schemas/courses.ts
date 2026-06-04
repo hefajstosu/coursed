@@ -5,10 +5,16 @@ export const rateCourseSchema = z.object({
   value: z.number().int().min(1).max(10),
 });
 
+const aspectScore = z.number().int().min(1).max(10).nullish();
+
 export const addReviewSchema = z.object({
   courseId: z.string().min(1),
   body: z.string().min(20, "Opinia musi mieć min. 20 znaków").max(5000),
   value: z.number().int().min(1).max(10),
+  // #9 oceny szczegółowe — opcjonalne
+  valueContent: aspectScore,
+  valueInstructor: aspectScore,
+  valueWorth: aspectScore,
 });
 
 export const voteReviewSchema = z.object({

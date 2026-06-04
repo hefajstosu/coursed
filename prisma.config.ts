@@ -10,6 +10,9 @@ export default defineConfig({
     seed: "tsx prisma/seed.ts",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    // Prisma 7: URL używany przez migrate/introspect. Dla Neon to DIRECT_URL
+    // (unpooled); lokalnie DIRECT_URL jest pusty → fallback na DATABASE_URL.
+    // Runtime PrismaClient łączy się osobno przez adapter PrismaPg (pooled).
+    url: process.env["DIRECT_URL"] || process.env["DATABASE_URL"],
   },
 });

@@ -4,9 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -85,6 +83,7 @@ model User {
   ratings         Rating[]
   reviews         Review[]
   reviewVotes     ReviewVote[]
+  reviewResponses ReviewResponse[]
   reports         Report[]
   courseRequests  CourseRequest[]
   blogPosts       BlogPost[]
@@ -218,7 +217,11 @@ model Rating {
   id        String      @id @default(cuid())
   courseId  String
   userId    String
-  value     Int         // 1..10
+  value     Int         // 1..10 (ocena ogólna)
+  // Oceny szczegółowe (opcjonalne, 1..10) — #9 wielokryterialne
+  valueContent    Int? // jakość treści
+  valueInstructor Int? // prowadzący
+  valueWorth      Int? // stosunek ceny do jakości
   kind      ContentKind // USER lub CRITIC (snapshot z roli usera w momencie zapisu)
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
@@ -237,18 +240,33 @@ model Review {
   body           String       // tekst opinii
   kind           ContentKind
   status         ReviewStatus @default(VISIBLE)
+  verified       Boolean      @default(false) // #5 zweryfikowana opinia (nadaje redakcja)
+  verifiedAt     DateTime?
   helpfulCount   Int          @default(0)
   unhelpfulCount Int          @default(0)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
-  course  Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  votes   ReviewVote[]
-  reports Report[]
+  course   Course          @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  votes    ReviewVote[]
+  reports  Report[]
+  response ReviewResponse? // #8 odpowiedź redakcji/platformy
 
   @@unique([courseId, userId])
   @@index([courseId, status])
+}
+
+model ReviewResponse {
+  id        String   @id @default(cuid())
+  reviewId  String   @unique
+  authorId  String
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  author User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
 }
 
 model ReviewVote {

@@ -10,12 +10,16 @@ import { RatingForm } from "@/components/course/RatingForm";
 import { ReviewForm } from "@/components/course/ReviewForm";
 import { EmbedSnippet } from "@/components/course/EmbedSnippet";
 import { CourseCard } from "@/components/course/CourseCard";
+import { RatingHistogram } from "@/components/course/RatingHistogram";
+import { Pagination } from "@/components/site/Pagination";
 import {
   getCourseBySlug,
   getCourseReviews,
+  getRatingDistribution,
   getSimilarCourses,
   getUserCourseInteraction,
   parseCachedRatings,
+  type ReviewSort,
 } from "@/server/queries/courses";
 import { formatLabels, levelLabels, languageLabel } from "@/lib/format";
 import { absoluteUrl, breadcrumbJsonLd, SITE_URL } from "@/lib/seo";
@@ -67,8 +71,11 @@ export default async function CoursePage({ params, searchParams }: PageProps) {
 
   const reviewFilterRaw = typeof sp.reviews === "string" ? sp.reviews : undefined;
   const reviewKind = parseReviewFilter(reviewFilterRaw);
-  const [reviews, session, similar] = await Promise.all([
-    getCourseReviews(course.id, reviewKind),
+  const reviewSort: ReviewSort = sp.sort === "newest" ? "newest" : "helpful";
+  const reviewPage = Math.max(1, parseInt(typeof sp.page === "string" ? sp.page : "1", 10) || 1);
+
+  const [reviewData, session, similar, distribution] = await Promise.all([
+    getCourseReviews(course.id, { kind: reviewKind, sort: reviewSort, page: reviewPage }),
     auth(),
     getSimilarCourses({
       courseId: course.id,
@@ -77,9 +84,12 @@ export default async function CoursePage({ params, searchParams }: PageProps) {
       level: course.level,
       limit: 6,
     }),
+    getRatingDistribution(course.id),
   ]);
+  const { reviews, total: reviewsTotal, perPage: reviewsPerPage } = reviewData;
 
   const isLoggedIn = !!session?.user;
+  const canRespond = session?.user?.role === "EDITOR" || session?.user?.role === "ADMIN";
   const interaction = isLoggedIn
     ? await getUserCourseInteraction(course.id, session.user.id)
     : null;
@@ -225,45 +235,64 @@ export default async function CoursePage({ params, searchParams }: PageProps) {
           </section>
         )}
 
-        <section className="space-y-4">
+        <section id="opinie" className="scroll-mt-24 space-y-4">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <h2 className="text-xl font-semibold tracking-tight">
-              Opinie {reviews.length > 0 && <span className="text-muted-foreground font-normal">({reviews.length})</span>}
+              Opinie {reviewsTotal > 0 && <span className="text-muted-foreground font-normal">({reviewsTotal})</span>}
             </h2>
-            <ReviewFilterTabs slug={slug} active={reviewFilterRaw} />
+            <div className="flex flex-wrap items-center gap-2">
+              <ReviewSortTabs slug={slug} kind={reviewFilterRaw} active={reviewSort} />
+              <ReviewFilterTabs slug={slug} active={reviewFilterRaw} sort={reviewSort} />
+            </div>
           </div>
           <ReviewForm
             courseId={course.id}
             initialBody={interaction?.userReviewBody ?? null}
             initialRating={interaction?.userRating ?? null}
+            initialAspects={interaction?.userAspects}
             isLoggedIn={isLoggedIn}
           />
 
-          {reviews.length === 0 ? (
+          {reviewsTotal === 0 ? (
             <div className="rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground">
               Brak opinii spełniających wybrany filtr.
             </div>
           ) : (
-            <div className="space-y-3">
-              {reviews.map((r) => {
-                const v = interaction?.voteByReview.get(r.id);
-                return (
-                  <ReviewItem
-                    key={r.id}
-                    reviewId={r.id}
-                    body={r.body}
-                    createdAt={r.createdAt}
-                    helpfulCount={r.helpfulCount}
-                    unhelpfulCount={r.unhelpfulCount}
-                    rating={r.rating}
-                    kind={r.kind}
-                    user={r.user}
-                    vote={v === 1 ? 1 : v === -1 ? -1 : null}
-                    isLoggedIn={isLoggedIn}
-                  />
-                );
-              })}
-            </div>
+            <>
+              <div className="space-y-3">
+                {reviews.map((r) => {
+                  const v = interaction?.voteByReview.get(r.id);
+                  return (
+                    <ReviewItem
+                      key={r.id}
+                      reviewId={r.id}
+                      body={r.body}
+                      createdAt={r.createdAt}
+                      helpfulCount={r.helpfulCount}
+                      unhelpfulCount={r.unhelpfulCount}
+                      rating={r.rating}
+                      kind={r.kind}
+                      verified={r.verified}
+                      response={r.response}
+                      canRespond={canRespond}
+                      user={r.user}
+                      vote={v === 1 ? 1 : v === -1 ? -1 : null}
+                      isLoggedIn={isLoggedIn}
+                    />
+                  );
+                })}
+              </div>
+              <Pagination
+                page={reviewPage}
+                total={reviewsTotal}
+                perPage={reviewsPerPage}
+                basePath={`/kursy/${slug}`}
+                searchParams={{
+                  reviews: reviewFilterRaw,
+                  sort: reviewSort === "helpful" ? undefined : reviewSort,
+                }}
+              />
+            </>
           )}
         </section>
 
@@ -291,6 +320,8 @@ export default async function CoursePage({ params, searchParams }: PageProps) {
 
       <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
         <RatingDisplay ratings={ratings} />
+
+        <RatingHistogram distribution={distribution} />
 
         <div className="rounded-lg border border-border p-4">
           <RatingForm
@@ -326,7 +357,26 @@ function Field({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ReviewFilterTabs({ slug, active }: { slug: string; active: string | undefined }) {
+function reviewsHref(
+  slug: string,
+  params: { reviews?: string; sort?: ReviewSort },
+) {
+  const sp = new URLSearchParams();
+  if (params.reviews) sp.set("reviews", params.reviews);
+  if (params.sort && params.sort !== "helpful") sp.set("sort", params.sort);
+  const qs = sp.toString();
+  return qs ? `/kursy/${slug}?${qs}#opinie` : `/kursy/${slug}#opinie`;
+}
+
+function ReviewFilterTabs({
+  slug,
+  active,
+  sort,
+}: {
+  slug: string;
+  active: string | undefined;
+  sort: ReviewSort;
+}) {
   const tabs = [
     { value: undefined, label: "Wszystkie" },
     { value: "user", label: "Użytkownicy" },
@@ -336,13 +386,44 @@ function ReviewFilterTabs({ slug, active }: { slug: string; active: string | und
     <div className="flex gap-1 rounded-md border border-border p-0.5 text-sm">
       {tabs.map((t) => {
         const isActive = (active ?? undefined) === t.value;
-        const href = t.value
-          ? `/kursy/${slug}?reviews=${t.value}`
-          : `/kursy/${slug}`;
         return (
           <Link
             key={t.label}
-            href={href}
+            href={reviewsHref(slug, { reviews: t.value, sort })}
+            className={`rounded px-3 py-1 transition-colors ${
+              isActive ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+            }`}
+            scroll={false}
+          >
+            {t.label}
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
+function ReviewSortTabs({
+  slug,
+  kind,
+  active,
+}: {
+  slug: string;
+  kind: string | undefined;
+  active: ReviewSort;
+}) {
+  const tabs: { value: ReviewSort; label: string }[] = [
+    { value: "helpful", label: "Najtrafniejsze" },
+    { value: "newest", label: "Najnowsze" },
+  ];
+  return (
+    <div className="flex gap-1 rounded-md border border-border p-0.5 text-sm">
+      {tabs.map((t) => {
+        const isActive = active === t.value;
+        return (
+          <Link
+            key={t.value}
+            href={reviewsHref(slug, { reviews: kind, sort: t.value })}
             className={`rounded px-3 py-1 transition-colors ${
               isActive ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
             }`}

@@ -7,10 +7,18 @@
 export const USER_RATING_MIN_COUNT = 3;
 export const CRITIC_RATING_MIN_COUNT = 1;
 
+export type AspectAverages = {
+  content: number | null;
+  instructor: number | null;
+  worth: number | null;
+};
+
 export type ComputedRatings = {
   overall: number | null;
   user: { avg: number | null; count: number };
   critic: { avg: number | null; count: number };
+  // #9 oceny wielokryterialne — średnie aspektów (null gdy brak danych)
+  aspects?: AspectAverages;
   flags: {
     singleSourceOnly: boolean;
     userTooFew: boolean;
@@ -22,6 +30,11 @@ export type ComputedRatings = {
 export function computeRatings(input: {
   userValues: readonly number[];
   criticValues: readonly number[];
+  aspects?: {
+    content: readonly number[];
+    instructor: readonly number[];
+    worth: readonly number[];
+  };
 }): ComputedRatings {
   const userCount = input.userValues.length;
   const criticCount = input.criticValues.length;
@@ -51,6 +64,11 @@ export function computeRatings(input: {
     overall: round1(overall),
     user: { avg: round1(userAvg), count: userCount },
     critic: { avg: round1(criticAvg), count: criticCount },
+    aspects: {
+      content: round1(average(input.aspects?.content ?? [])),
+      instructor: round1(average(input.aspects?.instructor ?? [])),
+      worth: round1(average(input.aspects?.worth ?? [])),
+    },
     flags: {
       singleSourceOnly: (hasUser && !hasCritic) || (!hasUser && hasCritic),
       userTooFew,
