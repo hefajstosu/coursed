@@ -65,9 +65,12 @@ export async function SiteHeader() {
         <div className="flex items-center gap-2">
           {session?.user ? (
             <div className="flex items-center gap-3 text-sm">
-              <span className="hidden sm:inline text-muted-foreground">
+              <Link
+                href="/profil"
+                className="hidden sm:inline text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              >
                 {session.user.name ?? session.user.email}
-              </span>
+              </Link>
               {(session.user.role === "ADMIN" || session.user.role === "EDITOR") && (
                 <Link
                   href="/admin"

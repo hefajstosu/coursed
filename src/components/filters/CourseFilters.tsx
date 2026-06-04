@@ -43,41 +43,70 @@ export function CourseFilters({ categories, formats, languages, levels, sorts }:
 
   const get = (key: string) => searchParams.get(key) ?? ALL;
 
+  const hasActiveFilters =
+    !!searchParams.get("category") ||
+    !!searchParams.get("format") ||
+    !!searchParams.get("language") ||
+    !!searchParams.get("level") ||
+    !!searchParams.get("sort");
+
+  const clearAll = () => {
+    const next = new URLSearchParams();
+    const q = searchParams.get("q");
+    if (q) next.set("q", q);
+    startTransition(() => {
+      router.push(next.toString() ? `${pathname}?${next.toString()}` : pathname, {
+        scroll: false,
+      });
+    });
+  };
+
   return (
-    <div
-      className={`grid grid-cols-2 lg:grid-cols-5 gap-3 ${isPending ? "opacity-60" : ""}`}
-    >
-      <Filter
-        label="Kategoria"
-        value={get("category")}
-        options={categories}
-        onChange={(v) => setParam("category", v)}
-      />
-      <Filter
-        label="Forma"
-        value={get("format")}
-        options={formats}
-        onChange={(v) => setParam("format", v)}
-      />
-      <Filter
-        label="Język"
-        value={get("language")}
-        options={languages}
-        onChange={(v) => setParam("language", v)}
-      />
-      <Filter
-        label="Poziom"
-        value={get("level")}
-        options={levels}
-        onChange={(v) => setParam("level", v)}
-      />
-      <Filter
-        label="Sortowanie"
-        value={searchParams.get("sort") ?? sorts[0]?.value ?? ALL}
-        options={sorts}
-        onChange={(v) => setParam("sort", v === sorts[0]?.value ? null : v)}
-        allowAll={false}
-      />
+    <div className={`space-y-2 ${isPending ? "opacity-60" : ""}`}>
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        <Filter
+          label="Kategoria"
+          value={get("category")}
+          options={categories}
+          onChange={(v) => setParam("category", v)}
+        />
+        <Filter
+          label="Forma"
+          value={get("format")}
+          options={formats}
+          onChange={(v) => setParam("format", v)}
+        />
+        <Filter
+          label="Język"
+          value={get("language")}
+          options={languages}
+          onChange={(v) => setParam("language", v)}
+        />
+        <Filter
+          label="Poziom"
+          value={get("level")}
+          options={levels}
+          onChange={(v) => setParam("level", v)}
+        />
+        <Filter
+          label="Sortowanie"
+          value={searchParams.get("sort") ?? sorts[0]?.value ?? ALL}
+          options={sorts}
+          onChange={(v) => setParam("sort", v === sorts[0]?.value ? null : v)}
+          allowAll={false}
+        />
+      </div>
+      {hasActiveFilters && (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={clearAll}
+            className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+          >
+            Wyczyść filtry
+          </button>
+        </div>
+      )}
     </div>
   );
 }

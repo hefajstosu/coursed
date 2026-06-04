@@ -50,7 +50,7 @@ export async function submitCourseRequest(
     };
   }
 
-  const rl = rateLimit(await clientKey(), LIMITS.courseRequest);
+  const rl = await rateLimit(await clientKey(), LIMITS.courseRequest);
   if (!rl.ok) {
     return { ok: false, error: "Za dużo zgłoszeń z tego adresu. Spróbuj jutro." };
   }

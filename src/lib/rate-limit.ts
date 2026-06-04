@@ -1,12 +1,12 @@
-/**
- * Minimalny in-memory rate limiter per (userId, action). Per-process — nie skaluje
- * się horyzontalnie; w produkcji (Vercel + serverless) zastąpić Upstash Ratelimit.
- *
- * Zwraca true gdy operacja dozwolona, false gdy przekroczono limit.
- */
-type Bucket = { count: number; resetAt: number };
+import "server-only";
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
 
-const buckets = new Map<string, Bucket>();
+/**
+ * Rate limiter per (key, config). Używa Upstash Redis gdy ustawione
+ * UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN. W innym przypadku
+ * fallback do in-memory bucketów (ok. dla deva, niezgodne z multi-instance prod).
+ */
 
 export type RateLimitConfig = {
   /** maks. operacji w oknie */
@@ -15,10 +15,41 @@ export type RateLimitConfig = {
   windowMs: number;
 };
 
-export function rateLimit(
-  key: string,
-  { limit, windowMs }: RateLimitConfig,
-): { ok: boolean; remaining: number; resetAt: number } {
+export type RateLimitResult = { ok: boolean; remaining: number; resetAt: number };
+
+// ── Upstash ───────────────────────────────────────────────────────────────
+
+const upstashUrl = process.env.UPSTASH_REDIS_REST_URL;
+const upstashToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+const useUpstash = !!(upstashUrl && upstashToken);
+
+const redis: Redis | null = useUpstash
+  ? new Redis({ url: upstashUrl!, token: upstashToken! })
+  : null;
+
+const limiterCache = new Map<string, Ratelimit>();
+
+function getLimiter(config: RateLimitConfig): Ratelimit | null {
+  if (!redis) return null;
+  const cacheKey = `${config.limit}:${config.windowMs}`;
+  const cached = limiterCache.get(cacheKey);
+  if (cached) return cached;
+  const limiter = new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(config.limit, `${config.windowMs} ms`),
+    analytics: false,
+    prefix: "rl",
+  });
+  limiterCache.set(cacheKey, limiter);
+  return limiter;
+}
+
+// ── In-memory fallback ────────────────────────────────────────────────────
+
+type Bucket = { count: number; resetAt: number };
+const buckets = new Map<string, Bucket>();
+
+function memoryRateLimit(key: string, { limit, windowMs }: RateLimitConfig): RateLimitResult {
   const now = Date.now();
   const existing = buckets.get(key);
 
@@ -33,6 +64,24 @@ export function rateLimit(
 
   existing.count += 1;
   return { ok: true, remaining: limit - existing.count, resetAt: existing.resetAt };
+}
+
+// ── Public API ────────────────────────────────────────────────────────────
+
+export async function rateLimit(
+  key: string,
+  config: RateLimitConfig,
+): Promise<RateLimitResult> {
+  const limiter = getLimiter(config);
+  if (limiter) {
+    const r = await limiter.limit(key);
+    return {
+      ok: r.success,
+      remaining: r.remaining,
+      resetAt: r.reset,
+    };
+  }
+  return memoryRateLimit(key, config);
 }
 
 // Predefiniowane limity per akcja

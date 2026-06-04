@@ -7,95 +7,199 @@ export const metadata: Metadata = {
   alternates: { canonical: "/zasady" },
 };
 
+const TOC = [
+  { id: "rodzaje", label: "Rodzaje opinii" },
+  { id: "wymagania", label: "Wymagania techniczne" },
+  { id: "usuwamy", label: "Co usuwamy lub ukrywamy" },
+  { id: "krytyk", label: "Status zweryfikowanego krytyka" },
+  { id: "zglaszanie", label: "Zgłaszanie naruszeń" },
+  { id: "audyt", label: "Audyt zmian" },
+  { id: "limity", label: "Limity nadużyć" },
+  { id: "kontakt", label: "Kontakt" },
+];
+
 export default function ZasadyPage() {
   return (
-    <article className="mx-auto max-w-3xl px-4 py-10 prose prose-zinc dark:prose-invert">
-      <header className="not-prose mb-8 space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight">
+    <article className="mx-auto max-w-3xl px-4 py-10">
+      <header className="mb-10 space-y-3">
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          Regulamin
+        </p>
+        <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">
           Zasady opinii i moderacji
         </h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-base text-muted-foreground leading-relaxed">
           Reguły, którymi kierujemy się przy publikacji opinii oraz przy
           moderacji treści przez redakcję coursed.pl.
         </p>
       </header>
 
-      <h2>Rodzaje opinii</h2>
-      <p>
-        W serwisie wyróżniamy dwa typy opinii: opinie zwykłych użytkowników
-        oraz opinie zweryfikowanych krytyków i redakcji. Każda opinia jest
-        wyraźnie oznaczona, a ocena ogólna kursu to średnia 50/50 oceny
-        użytkowników i krytyków.
-      </p>
+      <nav
+        aria-label="Spis treści"
+        className="mb-10 rounded-lg border border-border bg-muted/30 p-4"
+      >
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Spis treści
+        </p>
+        <ol className="grid gap-1.5 text-sm sm:grid-cols-2">
+          {TOC.map((t, i) => (
+            <li key={t.id}>
+              <a
+                href={`#${t.id}`}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <span className="tabular-nums text-xs mr-2">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                {t.label}
+              </a>
+            </li>
+          ))}
+        </ol>
+      </nav>
 
-      <h2>Wymagania techniczne</h2>
-      <ul>
-        <li>Minimalna długość treści opinii: 20 znaków.</li>
-        <li>Maksymalna długość: 5000 znaków.</li>
-        <li>Skala oceny: 1–10 (liczbowa).</li>
-        <li>Maksymalnie 2 linki w treści opinii.</li>
-        <li>
-          Treść nie może być zdominowana wielkimi literami (limit 60% liter
-          dużych przy długości od 30 znaków).
-        </li>
-        <li>
-          Jeden użytkownik = jedna opinia na kurs (kolejne wpisy aktualizują
-          poprzedni).
-        </li>
-        <li>
-          Identyczna treść opinii wklejona przy więcej niż jednym kursie
-          zostanie odrzucona.
-        </li>
-      </ul>
+      <div className="space-y-10">
+        <Section id="rodzaje" title="Rodzaje opinii">
+          <p>
+            W serwisie wyróżniamy dwa typy opinii: <strong>opinie zwykłych użytkowników</strong>{" "}
+            oraz <strong>opinie zweryfikowanych krytyków i redakcji</strong>. Każda opinia
+            jest wyraźnie oznaczona, a ocena ogólna kursu to średnia 50/50 oceny
+            użytkowników i krytyków.
+          </p>
+        </Section>
 
-      <h2>Co usuwamy lub ukrywamy</h2>
-      <ul>
-        <li>Spam, treści promocyjne i kopiowane między kursami.</li>
-        <li>Mowę nienawiści, obraźliwe ataki personalne, dyskryminację.</li>
-        <li>Treści naruszające prawo lub dobra osobiste osób trzecich.</li>
-        <li>
-          Opinie wystawione w celu manipulacji oceną (fałszywe konta, oceny
-          nieoparte na faktycznym kontakcie z kursem).
-        </li>
-        <li>Dane kontaktowe, prywatne dane osób trzecich.</li>
-      </ul>
+        <Section id="wymagania" title="Wymagania techniczne">
+          <p>Opinia, by mogła zostać opublikowana, musi spełniać:</p>
+          <Rules
+            items={[
+              { k: "Długość", v: "od 20 do 5000 znaków" },
+              { k: "Skala oceny", v: "1–10 (liczbowa)" },
+              { k: "Limit linków", v: "maks. 2 w treści opinii" },
+              {
+                k: "Wielkie litery",
+                v: "maks. 60% liter dużych przy długości od 30 znaków",
+              },
+              {
+                k: "Jeden użytkownik",
+                v: "jedna opinia na kurs (kolejne aktualizują poprzednią)",
+              },
+              {
+                k: "Duplikaty",
+                v: "identyczna treść opinii pod więcej niż jednym kursem zostanie odrzucona",
+              },
+            ]}
+          />
+        </Section>
 
-      <h2>Status zweryfikowanego krytyka</h2>
-      <p>
-        Status krytyka nadaje wyłącznie redakcja coursed.pl po zweryfikowaniu
-        kompetencji i niezależności osoby. Krytycy zobowiązują się do
-        ujawniania konfliktów interesów oraz do oceniania kursów na podstawie
-        własnego kontaktu z materiałem.
-      </p>
+        <Section id="usuwamy" title="Co usuwamy lub ukrywamy">
+          <ul className="space-y-2 list-disc pl-5 marker:text-muted-foreground/60">
+            <li>Spam, treści promocyjne i kopiowane między kursami.</li>
+            <li>Mowę nienawiści, obraźliwe ataki personalne, dyskryminację.</li>
+            <li>Treści naruszające prawo lub dobra osobiste osób trzecich.</li>
+            <li>
+              Opinie wystawione w celu manipulacji oceną — fałszywe konta, oceny
+              nieoparte na faktycznym kontakcie z kursem.
+            </li>
+            <li>Dane kontaktowe oraz prywatne dane osób trzecich.</li>
+          </ul>
+        </Section>
 
-      <h2>Zgłaszanie naruszeń</h2>
-      <p>
-        Każdy zalogowany użytkownik może zgłosić opinię naruszającą zasady,
-        klikając przycisk „Zgłoś" przy treści. Zgłoszenia trafiają do kolejki
-        moderacji i są rozpatrywane przez redakcję — opinia może zostać
-        ukryta, usunięta lub pozostać bez zmian wraz z uzasadnieniem
-        odrzucenia zgłoszenia.
-      </p>
+        <Section id="krytyk" title="Status zweryfikowanego krytyka">
+          <p>
+            Status krytyka nadaje wyłącznie redakcja coursed.pl po zweryfikowaniu
+            kompetencji i niezależności osoby. Krytycy zobowiązują się do:
+          </p>
+          <ul className="space-y-2 list-disc pl-5 marker:text-muted-foreground/60">
+            <li>ujawniania konfliktów interesów,</li>
+            <li>oceniania kursów na podstawie własnego kontaktu z materiałem,</li>
+            <li>kierowania się rzetelnością merytoryczną przy formułowaniu opinii.</li>
+          </ul>
+        </Section>
 
-      <h2>Audyt zmian</h2>
-      <p>
-        Wszystkie działania moderacyjne (zmiana statusu opinii, rozstrzygnięcie
-        zgłoszenia, edycja kursu, zmiana roli użytkownika) są rejestrowane w
-        wewnętrznym dzienniku audytu wraz z autorem i czasem zdarzenia.
-      </p>
+        <Section id="zglaszanie" title="Zgłaszanie naruszeń">
+          <p>
+            Każdy zalogowany użytkownik może zgłosić opinię naruszającą zasady,
+            klikając przycisk <strong>„Zgłoś”</strong> przy treści. Zgłoszenia trafiają do
+            kolejki moderacji i są rozpatrywane przez redakcję — opinia może
+            zostać:
+          </p>
+          <Rules
+            items={[
+              { k: "Ukryta", v: "widoczna tylko dla autora i redakcji" },
+              { k: "Usunięta", v: "trwałe usunięcie z katalogu" },
+              {
+                k: "Bez zmian",
+                v: "zgłoszenie odrzucone wraz z uzasadnieniem",
+              },
+            ]}
+          />
+        </Section>
 
-      <h2>Limity nadużyć</h2>
-      <p>
-        Aby ograniczyć spam i automatyczne ataki, działania użytkownika są
-        limitowane czasowo: oceny i opinie do kilkunastu na godzinę, głosy
-        pomocności do kilkudziesięciu na godzinę, zgłoszenia do kilku na dobę.
-      </p>
+        <Section id="audyt" title="Audyt zmian">
+          <p>
+            Wszystkie działania moderacyjne — zmiana statusu opinii,
+            rozstrzygnięcie zgłoszenia, edycja kursu, zmiana roli użytkownika —
+            są rejestrowane w wewnętrznym dzienniku audytu wraz z autorem i
+            czasem zdarzenia.
+          </p>
+        </Section>
 
-      <h2>Kontakt</h2>
-      <p>
-        Pytania dotyczące zasad lub konkretnych decyzji moderacyjnych można
-        kierować do redakcji przez formularz kontaktowy.
-      </p>
+        <Section id="limity" title="Limity nadużyć">
+          <p>
+            Aby ograniczyć spam i automatyczne ataki, działania użytkownika są
+            limitowane czasowo:
+          </p>
+          <Rules
+            items={[
+              { k: "Oceny i opinie", v: "kilkanaście na godzinę" },
+              { k: "Głosy pomocności", v: "kilkadziesiąt na godzinę" },
+              { k: "Zgłoszenia", v: "kilka na dobę" },
+            ]}
+          />
+        </Section>
+
+        <Section id="kontakt" title="Kontakt">
+          <p>
+            Pytania dotyczące zasad lub konkretnych decyzji moderacyjnych można
+            kierować do redakcji przez formularz kontaktowy.
+          </p>
+        </Section>
+      </div>
     </article>
+  );
+}
+
+function Section({
+  id,
+  title,
+  children,
+}: {
+  id: string;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section id={id} className="scroll-mt-24 space-y-3">
+      <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
+      <div className="text-sm leading-relaxed text-foreground/85 space-y-3">
+        {children}
+      </div>
+    </section>
+  );
+}
+
+function Rules({ items }: { items: { k: string; v: string }[] }) {
+  return (
+    <dl className="grid gap-px overflow-hidden rounded-lg border border-border bg-border text-sm">
+      {items.map((it) => (
+        <div
+          key={it.k}
+          className="grid grid-cols-[180px_1fr] gap-4 bg-background p-3"
+        >
+          <dt className="text-muted-foreground">{it.k}</dt>
+          <dd className="text-foreground">{it.v}</dd>
+        </div>
+      ))}
+    </dl>
   );
 }

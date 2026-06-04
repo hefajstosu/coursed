@@ -39,7 +39,7 @@ export async function rateCourse(input: { courseId: string; value: number }): Pr
     const user = await requireAuthUser();
     const data = rateCourseSchema.parse(input);
 
-    const rl = rateLimit(`rate:${user.id}`, LIMITS.rate);
+    const rl = await rateLimit(`rate:${user.id}`, LIMITS.rate);
     if (!rl.ok) return { ok: false, error: "Za dużo ocen w krótkim czasie. Spróbuj później." };
 
     const course = await db.course.findUnique({
@@ -79,7 +79,7 @@ export async function addReview(input: {
     const user = await requireAuthUser();
     const data = addReviewSchema.parse(input);
 
-    const rl = rateLimit(`review:${user.id}`, LIMITS.review);
+    const rl = await rateLimit(`review:${user.id}`, LIMITS.review);
     if (!rl.ok) return { ok: false, error: "Za dużo opinii w krótkim czasie. Spróbuj później." };
 
     const heuristic = spamHeuristics(data.body);
@@ -124,6 +124,60 @@ export async function addReview(input: {
 }
 
 // ──────────────────────────────────────────────────────────────────────────
+// Delete own
+// ──────────────────────────────────────────────────────────────────────────
+
+export async function deleteOwnRating(input: { courseId: string }): Promise<ActionResult> {
+  try {
+    const user = await requireAuthUser();
+    const courseId = String(input?.courseId ?? "");
+    if (!courseId) return { ok: false, error: "Brak kursu." };
+
+    const existing = await db.rating.findUnique({
+      where: { courseId_userId: { courseId, userId: user.id } },
+      select: { id: true, course: { select: { slug: true } } },
+    });
+    if (!existing) return { ok: false, error: "Nie masz oceny tego kursu." };
+
+    await db.rating.delete({
+      where: { courseId_userId: { courseId, userId: user.id } },
+    });
+
+    await recomputeCourseRatings(courseId);
+    revalidatePath(`/kursy/${existing.course.slug}`);
+    revalidatePath("/profil");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Nieznany błąd" };
+  }
+}
+
+export async function deleteOwnReview(input: { reviewId: string }): Promise<ActionResult> {
+  try {
+    const user = await requireAuthUser();
+    const reviewId = String(input?.reviewId ?? "");
+    if (!reviewId) return { ok: false, error: "Brak opinii." };
+
+    const review = await db.review.findUnique({
+      where: { id: reviewId },
+      select: { id: true, userId: true, course: { select: { slug: true } } },
+    });
+    if (!review) return { ok: false, error: "Opinia nie istnieje." };
+    if (review.userId !== user.id) {
+      return { ok: false, error: "Nie możesz usunąć cudzej opinii." };
+    }
+
+    await db.review.delete({ where: { id: review.id } });
+
+    revalidatePath(`/kursy/${review.course.slug}`);
+    revalidatePath("/profil");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Nieznany błąd" };
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────────────
 // Vote helpful
 // ──────────────────────────────────────────────────────────────────────────
 
@@ -135,7 +189,7 @@ export async function voteReview(input: {
     const user = await requireAuthUser();
     const data = voteReviewSchema.parse(input);
 
-    const rl = rateLimit(`vote:${user.id}`, LIMITS.vote);
+    const rl = await rateLimit(`vote:${user.id}`, LIMITS.vote);
     if (!rl.ok) return { ok: false, error: "Za dużo głosów w krótkim czasie." };
 
     const review = await db.review.findUnique({
@@ -211,7 +265,7 @@ export async function reportReview(input: {
     const user = await requireAuthUser();
     const data = reportReviewSchema.parse(input);
 
-    const rl = rateLimit(`report:${user.id}`, LIMITS.report);
+    const rl = await rateLimit(`report:${user.id}`, LIMITS.report);
     if (!rl.ok) return { ok: false, error: "Za dużo zgłoszeń w krótkim czasie." };
 
     const review = await db.review.findUnique({

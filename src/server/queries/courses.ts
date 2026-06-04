@@ -346,6 +346,80 @@ export async function getCourseEmbed(slug: string) {
   });
 }
 
+export type UserActivityItem = {
+  course: { id: string; slug: string; title: string; coverUrl: string | null };
+  rating: { value: number; createdAt: Date } | null;
+  review:
+    | {
+        id: string;
+        body: string;
+        status: "VISIBLE" | "HIDDEN" | "REMOVED" | "PENDING";
+        createdAt: Date;
+        helpfulCount: number;
+        unhelpfulCount: number;
+        courseId: string;
+      }
+    | null;
+};
+
+export async function getUserActivity(userId: string): Promise<UserActivityItem[]> {
+  const [ratings, reviews] = await Promise.all([
+    db.rating.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      select: {
+        value: true,
+        createdAt: true,
+        course: {
+          select: { id: true, slug: true, title: true, coverUrl: true },
+        },
+      },
+    }),
+    db.review.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        body: true,
+        status: true,
+        createdAt: true,
+        helpfulCount: true,
+        unhelpfulCount: true,
+        courseId: true,
+      },
+    }),
+  ]);
+
+  const reviewByCourse = new Map(reviews.map((r) => [r.courseId, r]));
+
+  const items: UserActivityItem[] = ratings.map((r) => ({
+    course: r.course,
+    rating: { value: r.value, createdAt: r.createdAt },
+    review: reviewByCourse.get(r.course.id) ?? null,
+  }));
+
+  const ratedCourseIds = new Set(ratings.map((r) => r.course.id));
+  const orphanReviews = reviews.filter((rv) => !ratedCourseIds.has(rv.courseId));
+  if (orphanReviews.length > 0) {
+    const orphanCourses = await db.course.findMany({
+      where: { id: { in: orphanReviews.map((rv) => rv.courseId) } },
+      select: { id: true, slug: true, title: true, coverUrl: true },
+    });
+    const courseById = new Map(orphanCourses.map((c) => [c.id, c]));
+    for (const rv of orphanReviews) {
+      const course = courseById.get(rv.courseId);
+      if (!course) continue;
+      items.push({ course, rating: null, review: rv });
+    }
+  }
+
+  return items.sort((a, b) => {
+    const dateA = a.rating?.createdAt ?? a.review?.createdAt ?? new Date(0);
+    const dateB = b.rating?.createdAt ?? b.review?.createdAt ?? new Date(0);
+    return dateB.getTime() - dateA.getTime();
+  });
+}
+
 export async function getUserCourseInteraction(courseId: string, userId: string) {
   const [rating, review, votes] = await Promise.all([
     db.rating.findUnique({

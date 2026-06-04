@@ -72,6 +72,11 @@ export function SiteFooter() {
                 Zasady opinii
               </Link>
             </li>
+            <li>
+              <Link href="/faq" className="hover:text-foreground">
+                FAQ
+              </Link>
+            </li>
           </ul>
         </div>
       </div>
