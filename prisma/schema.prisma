@@ -64,17 +64,25 @@ enum BlogPostStatus {
   PUBLISHED
 }
 
+enum CourseClaimStatus {
+  NEW
+  APPROVED
+  REJECTED
+}
+
 // ──────────────────────────────────────────────────────────────────────────
 // Auth.js v5
 // ──────────────────────────────────────────────────────────────────────────
 
 model User {
   id            String    @id @default(cuid())
+  slug          String?   @unique // #13 publiczny profil /u/[slug]
   name          String?
   email         String    @unique
   emailVerified DateTime?
   image         String?
   role          UserRole  @default(USER)
+  banned        Boolean   @default(false) // #16 zawieszenie konta (blokada pisania)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -88,6 +96,9 @@ model User {
   courseRequests  CourseRequest[]
   blogPosts       BlogPost[]
   auditLogs       AuditLog[]
+  follows         CourseFollow[]
+  ownedCourses    Course[]         @relation("CourseOwner")
+  courseClaims    CourseClaim[]
 }
 
 model Account {
@@ -150,6 +161,11 @@ model Course {
   hasCertificate   Boolean       @default(false)
   location         String?       // dla OFFLINE/HYBRID
   status           CourseStatus  @default(DRAFT)
+  featured         Boolean       @default(false) // #19 polecane przez redakcję
+
+  // #15 właściciel listingu (twórca/platforma po zatwierdzeniu przejęcia)
+  ownerId String?
+  owner   User?   @relation("CourseOwner", fields: [ownerId], references: [id], onDelete: SetNull)
 
   // Scalanie duplikatów
   mergedIntoId String?
@@ -173,8 +189,11 @@ model Course {
   categories CourseCategory[]
   ratings    Rating[]
   reviews    Review[]
+  followers  CourseFollow[]
+  claims     CourseClaim[]
 
   @@index([status])
+  @@index([featured])
   @@index([format])
   @@index([language])
   @@index([level])
@@ -255,6 +274,34 @@ model Review {
 
   @@unique([courseId, userId])
   @@index([courseId, status])
+}
+
+model CourseClaim {
+  id        String            @id @default(cuid())
+  courseId  String
+  userId    String
+  note      String?
+  status    CourseClaimStatus @default(NEW)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, userId])
+  @@index([status])
+}
+
+model CourseFollow {
+  userId    String
+  courseId  String
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@id([userId, courseId])
+  @@index([courseId])
 }
 
 model ReviewResponse {

@@ -3,7 +3,12 @@ import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { CourseCard } from "@/components/course/CourseCard";
-import { getFeaturedCourses, getRecentCourses } from "@/server/queries/courses";
+import {
+  getFeaturedCourses,
+  getRecentCourses,
+  getEditorialPicks,
+  getHotReviews,
+} from "@/server/queries/courses";
 import { getPopularCategories } from "@/server/queries/categories";
 
 export const metadata: Metadata = {
@@ -11,10 +16,12 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const [featured, recent, popularCategories] = await Promise.all([
+  const [featured, recent, popularCategories, editorial, hotReviews] = await Promise.all([
     getFeaturedCourses(6),
     getRecentCourses(6),
     getPopularCategories(8),
+    getEditorialPicks(3),
+    getHotReviews(4),
   ]);
 
   return (
@@ -40,6 +47,15 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {editorial.length > 0 && (
+        <Section
+          title="Polecane przez redakcję"
+          subtitle="Kursy ręcznie wyróżnione przez redakcję coursed.pl."
+        >
+          <CourseGrid courses={editorial} />
+        </Section>
+      )}
+
       {featured.length > 0 && (
         <Section
           title="Najwyżej oceniane"
@@ -47,6 +63,37 @@ export default async function HomePage() {
           link={{ href: "/kursy?sort=top-rated", label: "Zobacz wszystkie" }}
         >
           <CourseGrid courses={featured} />
+        </Section>
+      )}
+
+      {hotReviews.length > 0 && (
+        <Section
+          title="Najgorętsze opinie"
+          subtitle="Najbardziej pomocne opinie ostatnio doceniane przez społeczność."
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
+            {hotReviews.map((r) => (
+              <article key={r.id} className="rounded-lg border border-border p-4 space-y-2">
+                <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                  <Link href={`/kursy/${r.course.slug}#opinie`} className="font-medium text-foreground hover:underline">
+                    {r.course.title}
+                  </Link>
+                  <span className="tabular-nums">👍 {r.helpfulCount}</span>
+                </div>
+                <p className="text-sm leading-relaxed text-foreground/85 line-clamp-4">{r.body}</p>
+                <div className="text-xs text-muted-foreground">
+                  {r.user.slug ? (
+                    <Link href={`/u/${r.user.slug}`} className="hover:underline">
+                      {r.user.name ?? "Użytkownik"}
+                    </Link>
+                  ) : (
+                    (r.user.name ?? "Użytkownik")
+                  )}
+                  {r.kind === "CRITIC" && " · krytyk"}
+                </div>
+              </article>
+            ))}
+          </div>
         </Section>
       )}
 

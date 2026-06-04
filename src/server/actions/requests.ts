@@ -56,6 +56,9 @@ export async function submitCourseRequest(
   }
 
   const session = await auth();
+  if (session?.user?.banned) {
+    return { ok: false, error: "Twoje konto zostało zawieszone." };
+  }
 
   await db.courseRequest.create({
     data: {

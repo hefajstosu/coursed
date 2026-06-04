@@ -2,9 +2,28 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { auth } from "@/auth";
 import { requireRole } from "@/lib/auth-helpers";
 import { db } from "@/lib/db";
 import { logAudit } from "@/lib/audit";
+import { sendEmail, reviewModeratedEmail } from "@/lib/mailer";
+
+/** Odpowiadać na opinię może redakcja (ADMIN/EDITOR) lub właściciel kursu (#15). */
+async function ensureCanRespond(
+  reviewId: string,
+): Promise<{ ok: true; userId: string; slug: string } | { ok: false; error: string }> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "Musisz być zalogowany." };
+  const review = await db.review.findUnique({
+    where: { id: reviewId },
+    select: { course: { select: { slug: true, ownerId: true } } },
+  });
+  if (!review) return { ok: false, error: "Opinia nie istnieje." };
+  const isStaff = session.user.role === "ADMIN" || session.user.role === "EDITOR";
+  const isOwner = review.course.ownerId === session.user.id;
+  if (!isStaff && !isOwner) return { ok: false, error: "Brak uprawnień do odpowiedzi." };
+  return { ok: true, userId: session.user.id, slug: review.course.slug };
+}
 
 export type ReviewActionResult = { ok: true } | { ok: false; error: string };
 
@@ -28,7 +47,11 @@ export async function setReviewStatus(input: {
 
     const before = await db.review.findUnique({
       where: { id: data.reviewId },
-      select: { status: true, course: { select: { slug: true } } },
+      select: {
+        status: true,
+        user: { select: { email: true } },
+        course: { select: { slug: true, title: true } },
+      },
     });
     if (!before) return { ok: false, error: "Opinia nie istnieje." };
     if (before.status === data.status) return { ok: true };
@@ -45,6 +68,16 @@ export async function setReviewStatus(input: {
       entityId: data.reviewId,
       diff: { from: before.status, to: data.status },
     });
+
+    // #10 powiadom autora o ukryciu/usunięciu opinii
+    if ((data.status === "HIDDEN" || data.status === "REMOVED") && before.user.email) {
+      const mail = reviewModeratedEmail({
+        courseTitle: before.course.title,
+        courseSlug: before.course.slug,
+        status: data.status,
+      });
+      await sendEmail({ to: before.user.email, ...mail });
+    }
 
     revalidatePath("/admin/opinie");
     revalidatePath(`/kursy/${before.course.slug}`);
@@ -138,29 +171,25 @@ export async function upsertReviewResponse(input: {
   body: string;
 }): Promise<ReviewActionResult> {
   try {
-    const actor = await requireRole("ADMIN", "EDITOR");
     const data = responseSchema.parse({ reviewId: input.reviewId, body: input.body?.trim() });
 
-    const review = await db.review.findUnique({
-      where: { id: data.reviewId },
-      select: { course: { select: { slug: true } } },
-    });
-    if (!review) return { ok: false, error: "Opinia nie istnieje." };
+    const perm = await ensureCanRespond(data.reviewId);
+    if (!perm.ok) return perm;
 
     await db.reviewResponse.upsert({
       where: { reviewId: data.reviewId },
-      create: { reviewId: data.reviewId, authorId: actor.id, body: data.body },
-      update: { body: data.body, authorId: actor.id },
+      create: { reviewId: data.reviewId, authorId: perm.userId, body: data.body },
+      update: { body: data.body, authorId: perm.userId },
     });
 
     await logAudit({
-      actorId: actor.id,
+      actorId: perm.userId,
       action: "review.respond",
       entity: "Review",
       entityId: data.reviewId,
     });
 
-    revalidatePath(`/kursy/${review.course.slug}`);
+    revalidatePath(`/kursy/${perm.slug}`);
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Nieznany błąd" };
@@ -171,26 +200,28 @@ export async function deleteReviewResponse(input: {
   reviewId: string;
 }): Promise<ReviewActionResult> {
   try {
-    const actor = await requireRole("ADMIN", "EDITOR");
     const reviewId = String(input?.reviewId ?? "");
     if (!reviewId) return { ok: false, error: "Brak opinii." };
 
+    const perm = await ensureCanRespond(reviewId);
+    if (!perm.ok) return perm;
+
     const existing = await db.reviewResponse.findUnique({
       where: { reviewId },
-      select: { review: { select: { course: { select: { slug: true } } } } },
+      select: { reviewId: true },
     });
     if (!existing) return { ok: false, error: "Brak odpowiedzi." };
 
     await db.reviewResponse.delete({ where: { reviewId } });
 
     await logAudit({
-      actorId: actor.id,
+      actorId: perm.userId,
       action: "review.respond.delete",
       entity: "Review",
       entityId: reviewId,
     });
 
-    revalidatePath(`/kursy/${existing.review.course.slug}`);
+    revalidatePath(`/kursy/${perm.slug}`);
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Nieznany błąd" };

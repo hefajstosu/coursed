@@ -174,6 +174,36 @@ export async function updateCourse(
   return { ok: true };
 }
 
+export async function setCourseFeatured(
+  courseId: string,
+  featured: boolean,
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const actor = await requireRole("ADMIN", "EDITOR");
+    const course = await db.course.findUnique({
+      where: { id: courseId },
+      select: { featured: true },
+    });
+    if (!course) return { ok: false, error: "Kurs nie istnieje." };
+    if (course.featured === featured) return { ok: true };
+
+    await db.course.update({ where: { id: courseId }, data: { featured } });
+
+    await logAudit({
+      actorId: actor.id,
+      action: featured ? "course.feature" : "course.unfeature",
+      entity: "Course",
+      entityId: courseId,
+    });
+
+    revalidatePath("/");
+    revalidatePath("/admin/kursy");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Nieznany błąd" };
+  }
+}
+
 export async function deleteCourse(courseId: string): Promise<{ ok: boolean; error?: string }> {
   try {
     const actor = await requireRole("ADMIN");

@@ -224,6 +224,38 @@ export async function getRecentCourses(limit = 6) {
   });
 }
 
+/** #19 Kursy oznaczone jako polecane przez redakcję. */
+export async function getEditorialPicks(limit = 6) {
+  return db.course.findMany({
+    where: { status: CourseStatus.PUBLISHED, featured: true },
+    orderBy: [{ avgOverall: "desc" }, { updatedAt: "desc" }],
+    take: limit,
+    select: courseCardSelect,
+  });
+}
+
+/** #19 Najgorętsze opinie — widoczne, z treścią, wg pomocności. */
+export async function getHotReviews(limit = 4) {
+  return db.review.findMany({
+    where: {
+      status: "VISIBLE",
+      course: { status: CourseStatus.PUBLISHED },
+      body: { not: "" },
+    },
+    orderBy: [{ helpfulCount: "desc" }, { createdAt: "desc" }],
+    take: limit,
+    select: {
+      id: true,
+      body: true,
+      helpfulCount: true,
+      createdAt: true,
+      kind: true,
+      user: { select: { name: true, slug: true } },
+      course: { select: { slug: true, title: true } },
+    },
+  });
+}
+
 export async function getCourseBySlug(slug: string) {
   const course = await db.course.findUnique({
     where: { slug },
@@ -273,7 +305,7 @@ export async function getCourseReviews(
       skip: (page - 1) * REVIEWS_PER_PAGE,
       take: REVIEWS_PER_PAGE,
       include: {
-        user: { select: { name: true, image: true, role: true } },
+        user: { select: { name: true, image: true, role: true, slug: true } },
         response: {
           select: { body: true, createdAt: true, author: { select: { name: true } } },
         },
@@ -454,8 +486,28 @@ export async function getUserActivity(userId: string): Promise<UserActivityItem[
   });
 }
 
+export async function getFollowedCourses(userId: string) {
+  const rows = await db.courseFollow.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    select: {
+      course: {
+        select: {
+          id: true,
+          slug: true,
+          title: true,
+          coverUrl: true,
+          avgOverall: true,
+          ratingsCount: true,
+        },
+      },
+    },
+  });
+  return rows.map((r) => r.course);
+}
+
 export async function getUserCourseInteraction(courseId: string, userId: string) {
-  const [rating, review, votes] = await Promise.all([
+  const [rating, review, votes, follow] = await Promise.all([
     db.rating.findUnique({
       where: { courseId_userId: { courseId, userId } },
       select: {
@@ -473,6 +525,10 @@ export async function getUserCourseInteraction(courseId: string, userId: string)
       where: { userId, review: { courseId } },
       select: { reviewId: true, value: true },
     }),
+    db.courseFollow.findUnique({
+      where: { userId_courseId: { userId, courseId } },
+      select: { courseId: true },
+    }),
   ]);
 
   return {
@@ -482,6 +538,7 @@ export async function getUserCourseInteraction(courseId: string, userId: string)
       instructor: rating?.valueInstructor ?? null,
       worth: rating?.valueWorth ?? null,
     },
+    isFollowing: follow !== null,
     userReviewBody: review?.body ?? null,
     userReviewStatus: review?.status ?? null,
     voteByReview: new Map(votes.map((v) => [v.reviewId, v.value])),

@@ -6,6 +6,7 @@ const NAV = [
   { href: "/admin", label: "Dashboard", exact: true },
   { href: "/admin/kursy", label: "Kursy" },
   { href: "/admin/zgloszenia", label: "Zgłoszenia kursów" },
+  { href: "/admin/przejecia", label: "Przejęcia listingów" },
   { href: "/admin/opinie", label: "Opinie" },
   { href: "/admin/kategorie", label: "Kategorie" },
   { href: "/admin/blog", label: "Blog" },

@@ -24,19 +24,19 @@ Legenda priorytetów: 🔴 bloker launchu · 🟠 rdzeń produktu · 🟡 zaanga
 
 ## 🟡 Zaangażowanie i retencja (część na ROADMAP)
 
-- [ ] **10. Powiadomienia e-mail** — moderacja, decyzja zgłoszenia, weryfikacja krytyka (ROADMAP A).
-- [ ] **11. Obserwowanie kursu / watchlist** — „powiadom o nowej opinii", zakładki.
+- [x] **10. Powiadomienia e-mail** — `lib/mailer.ts` (Resend REST, no-op bez klucza); maile: ukrycie/usunięcie opinii, decyzja zgłoszenia kursu (ACCEPTED/REJECTED), nadanie roli CRITIC.
+- [x] **11. Obserwowanie kursu / watchlist** — model `CourseFollow`, `toggleFollow`, `FollowButton` na karcie kursu, sekcja „Obserwowane kursy" w `/profil`, mail do obserwujących przy nowej opinii.
 - [ ] **12. Newsletter / subskrypcja kategorii** — (ROADMAP D / longterm).
-- [ ] **13. Profile publiczne userów** `/u/{slug}` — (ROADMAP D).
+- [x] **13. Profile publiczne userów** `/u/{slug}` — `User.slug` (+ backfill + `events.createUser`), strona `/u/[slug]` (opinie, średnia, badge krytyka), autorzy opinii linkowani.
 - [ ] **14. Porównywarka kursów** `/porownaj` — (ROADMAP D).
 
 ## 🟢 Strona podażowa
 
-- [ ] **15. Konta twórców / „przejmij listing"** — dashboard platformy/twórcy, statystyki, odpowiedzi na opinie.
+- [x] **15. Konta twórców / „przejmij listing"** — model `CourseClaim` + `Course.ownerId`; zgłoszenie przejęcia (`ClaimButton`), kolejka `/admin/przejecia` (approve/reject → przypisanie właściciela), właściciel odpowiada na opinie. ℹ️ maile o decyzji + dashboard statystyk = follow-up.
 
 ## ⚪ Drobne UX / moderacja
 
-- [ ] **16. Ban/zawieszenie użytkownika** — stan „zbanowany" blokujący pisanie.
-- [ ] **17. Autocomplete w wyszukiwarce.**
-- [ ] **18. Wskaźnik „edytowano" przy opinii.**
-- [ ] **19. Sekcje „najgorętsze opinie" i „polecane przez redakcję" na home** — (ROADMAP D).
+- [x] **16. Ban/zawieszenie użytkownika** — `User.banned` w sesji, blokada pisania (oceny/opinie/głosy/zgłoszenia/follow/claim), toggle w `/admin/uzytkownicy`.
+- [x] **17. Autocomplete w wyszukiwarce** — `/api/search/suggest` + `SearchBox` z dropdownem i nawigacją klawiaturą.
+- [x] **18. Wskaźnik „edytowano" przy opinii** — gdy `updatedAt > createdAt` (próg 60 s).
+- [x] **19. Sekcje „najgorętsze opinie" i „polecane przez redakcję" na home** — `Course.featured` + toggle admina, `getHotReviews`, `getEditorialPicks`.

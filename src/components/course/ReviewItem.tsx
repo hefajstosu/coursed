@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Star, BadgeCheck } from "lucide-react";
 import type { ContentKind, UserRole } from "@/generated/prisma/enums";
 import { cn } from "@/lib/utils";
@@ -9,6 +10,7 @@ type ReviewItemProps = {
   reviewId: string;
   body: string;
   createdAt: Date;
+  updatedAt: Date;
   helpfulCount: number;
   unhelpfulCount: number;
   rating: number | null;
@@ -16,7 +18,7 @@ type ReviewItemProps = {
   verified: boolean;
   response: { body: string; createdAt: Date; author: { name: string | null } } | null;
   canRespond: boolean;
-  user: { name: string | null; image: string | null; role: keyof typeof UserRole };
+  user: { name: string | null; image: string | null; role: keyof typeof UserRole; slug: string | null };
   vote: 1 | -1 | null;
   isLoggedIn: boolean;
 };
@@ -25,6 +27,7 @@ export function ReviewItem({
   reviewId,
   body,
   createdAt,
+  updatedAt,
   kind,
   helpfulCount,
   unhelpfulCount,
@@ -43,7 +46,13 @@ export function ReviewItem({
       <header className="flex items-start justify-between gap-3 text-sm">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <span className="font-medium">{user.name ?? "Użytkownik"}</span>
+            {user.slug ? (
+              <Link href={`/u/${user.slug}`} className="font-medium hover:underline">
+                {user.name ?? "Użytkownik"}
+              </Link>
+            ) : (
+              <span className="font-medium">{user.name ?? "Użytkownik"}</span>
+            )}
             {isCritic && (
               <span className="rounded bg-foreground px-1.5 py-0.5 text-[10px] font-semibold uppercase text-background">
                 Krytyk
@@ -67,14 +76,16 @@ export function ReviewItem({
             month: "long",
             day: "numeric",
           })}
+          {updatedAt.getTime() - createdAt.getTime() > 60_000 && (
+            <span className="ml-1 italic">· edytowano</span>
+          )}
         </time>
       </header>
       <p className="text-sm leading-relaxed whitespace-pre-line">{body}</p>
       {response && (
         <div className="rounded-md border-l-2 border-primary/50 bg-muted/40 p-3">
           <div className="mb-1 text-xs font-semibold text-foreground">
-            Odpowiedź redakcji
-            {response.author.name ? ` · ${response.author.name}` : ""}
+            Odpowiedź{response.author.name ? ` · ${response.author.name}` : ""}
             <time
               className="ml-2 font-normal text-muted-foreground"
               dateTime={response.createdAt.toISOString()}

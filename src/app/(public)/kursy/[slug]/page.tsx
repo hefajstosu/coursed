@@ -11,6 +11,8 @@ import { ReviewForm } from "@/components/course/ReviewForm";
 import { EmbedSnippet } from "@/components/course/EmbedSnippet";
 import { CourseCard } from "@/components/course/CourseCard";
 import { RatingHistogram } from "@/components/course/RatingHistogram";
+import { FollowButton } from "@/components/course/FollowButton";
+import { ClaimButton } from "@/components/course/ClaimButton";
 import { Pagination } from "@/components/site/Pagination";
 import {
   getCourseBySlug,
@@ -89,7 +91,9 @@ export default async function CoursePage({ params, searchParams }: PageProps) {
   const { reviews, total: reviewsTotal, perPage: reviewsPerPage } = reviewData;
 
   const isLoggedIn = !!session?.user;
-  const canRespond = session?.user?.role === "EDITOR" || session?.user?.role === "ADMIN";
+  const isOwner = !!session?.user && course.ownerId === session.user.id;
+  const canRespond =
+    session?.user?.role === "EDITOR" || session?.user?.role === "ADMIN" || isOwner;
   const interaction = isLoggedIn
     ? await getUserCourseInteraction(course.id, session.user.id)
     : null;
@@ -268,6 +272,7 @@ export default async function CoursePage({ params, searchParams }: PageProps) {
                       reviewId={r.id}
                       body={r.body}
                       createdAt={r.createdAt}
+                      updatedAt={r.updatedAt}
                       helpfulCount={r.helpfulCount}
                       unhelpfulCount={r.unhelpfulCount}
                       rating={r.rating}
@@ -330,6 +335,14 @@ export default async function CoursePage({ params, searchParams }: PageProps) {
             isLoggedIn={isLoggedIn}
           />
         </div>
+
+        <FollowButton
+          courseId={course.id}
+          initialFollowing={interaction?.isFollowing ?? false}
+          isLoggedIn={isLoggedIn}
+        />
+
+        {isLoggedIn && !course.ownerId && <ClaimButton courseId={course.id} />}
 
         {course.officialUrl && (
           <a

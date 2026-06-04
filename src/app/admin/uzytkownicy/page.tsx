@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { requireRole } from "@/lib/auth-helpers";
 import { db } from "@/lib/db";
-import { UserRoleSelect } from "@/components/admin/UserRoleSelect";
+import { UserRoleSelect, BanButton } from "@/components/admin/UserRoleSelect";
 import { pluralPl } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Użytkownicy" };
@@ -34,6 +34,7 @@ export default async function AdminUsersPage({
       email: true,
       name: true,
       role: true,
+      banned: true,
       createdAt: true,
       _count: { select: { ratings: true, reviews: true } },
     },
@@ -74,6 +75,7 @@ export default async function AdminUsersPage({
               <Th>Aktywność</Th>
               <Th>Dołączył</Th>
               <Th>Rola</Th>
+              <Th>Status</Th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -99,6 +101,15 @@ export default async function AdminUsersPage({
                     isSelf={u.id === actor.id}
                     isAdmin={actor.role === "ADMIN"}
                   />
+                </Td>
+                <Td>
+                  {actor.role === "ADMIN" && u.id !== actor.id && u.role !== "ADMIN" ? (
+                    <BanButton userId={u.id} initialBanned={u.banned} />
+                  ) : u.banned ? (
+                    <span className="text-xs text-destructive">Zawieszony</span>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">Aktywny</span>
+                  )}
                 </Td>
               </tr>
             ))}

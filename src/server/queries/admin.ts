@@ -19,6 +19,7 @@ export async function listAdminCourses(filter: { status?: "DRAFT" | "PUBLISHED" 
       slug: true,
       title: true,
       status: true,
+      featured: true,
       format: true,
       coverUrl: true,
       avgOverall: true,

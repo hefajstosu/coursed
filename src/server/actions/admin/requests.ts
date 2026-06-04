@@ -6,6 +6,7 @@ import { requireRole } from "@/lib/auth-helpers";
 import { db } from "@/lib/db";
 import { logAudit } from "@/lib/audit";
 import { slugify } from "@/lib/slug";
+import { sendEmail, courseRequestDecisionEmail } from "@/lib/mailer";
 
 export type RequestActionResult =
   | { ok: true; redirectTo?: string }
@@ -60,6 +61,11 @@ export async function acceptCourseRequest(input: { requestId: string }): Promise
       diff: { courseId: created.id, slug: created.slug },
     });
 
+    if (req.submitterEmail) {
+      const mail = courseRequestDecisionEmail({ title: req.title, decision: "ACCEPTED" });
+      await sendEmail({ to: req.submitterEmail, ...mail });
+    }
+
     revalidatePath("/admin/zgloszenia");
     revalidatePath("/admin/kursy");
     return { ok: true, redirectTo: `/admin/kursy/${created.id}` };
@@ -88,6 +94,11 @@ export async function rejectCourseRequest(input: { requestId: string }): Promise
       entity: "CourseRequest",
       entityId: req.id,
     });
+
+    if (req.submitterEmail) {
+      const mail = courseRequestDecisionEmail({ title: req.title, decision: "REJECTED" });
+      await sendEmail({ to: req.submitterEmail, ...mail });
+    }
 
     revalidatePath("/admin/zgloszenia");
     return { ok: true };

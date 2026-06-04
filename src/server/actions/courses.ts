@@ -7,6 +7,7 @@ import { rateLimit, LIMITS } from "@/lib/rate-limit";
 import { spamHeuristics, isCrossCourseDuplicate } from "@/lib/spam";
 import { ContentKind, UserRole } from "@/generated/prisma/enums";
 import { recomputeCourseRatings } from "@/server/ratings-cache";
+import { sendEmail, newReviewEmail } from "@/lib/mailer";
 import {
   rateCourseSchema,
   addReviewSchema,
@@ -21,6 +22,7 @@ export type ActionResult =
 async function requireAuthUser() {
   const session = await auth();
   if (!session?.user) throw new Error("Musisz być zalogowany.");
+  if (session.user.banned) throw new Error("Twoje konto zostało zawieszone.");
   return session.user;
 }
 
@@ -90,7 +92,7 @@ export async function addReview(input: {
 
     const course = await db.course.findUnique({
       where: { id: data.courseId },
-      select: { id: true, slug: true, status: true },
+      select: { id: true, slug: true, title: true, status: true },
     });
     if (!course || course.status !== "PUBLISHED") {
       return { ok: false, error: "Kurs niedostępny." };
@@ -102,6 +104,12 @@ export async function addReview(input: {
         error: "Ta sama treść została już wystawiona przy innym kursie.",
       };
     }
+
+    // Nowa opinia (nie edycja) → wyślemy powiadomienie obserwującym
+    const hadReview = await db.review.findUnique({
+      where: { courseId_userId: { courseId: course.id, userId: user.id } },
+      select: { id: true },
+    });
 
     const kind = kindFromRole(user.role);
 
@@ -134,6 +142,22 @@ export async function addReview(input: {
 
     await recomputeCourseRatings(course.id);
     revalidatePath(`/kursy/${course.slug}`);
+
+    // #11 powiadom obserwujących (poza autorem) o nowej opinii
+    if (!hadReview) {
+      const followers = await db.courseFollow.findMany({
+        where: { courseId: course.id, userId: { not: user.id } },
+        select: { user: { select: { email: true } } },
+      });
+      const emails = followers
+        .map((f) => f.user.email)
+        .filter((e): e is string => Boolean(e));
+      if (emails.length > 0) {
+        const mail = newReviewEmail({ courseTitle: course.title, courseSlug: course.slug });
+        await Promise.allSettled(emails.map((to) => sendEmail({ to, ...mail })));
+      }
+    }
+
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Nieznany błąd" };

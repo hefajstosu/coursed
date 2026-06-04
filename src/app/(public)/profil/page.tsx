@@ -4,7 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Star } from "lucide-react";
 import { auth } from "@/auth";
-import { getUserActivity } from "@/server/queries/courses";
+import { getUserActivity, getFollowedCourses } from "@/server/queries/courses";
 import {
   DeleteRatingButton,
   DeleteReviewButton,
@@ -30,7 +30,10 @@ export default async function ProfilPage() {
   const session = await auth();
   if (!session?.user) redirect("/login?next=/profil");
 
-  const items = await getUserActivity(session.user.id);
+  const [items, followed] = await Promise.all([
+    getUserActivity(session.user.id),
+    getFollowedCourses(session.user.id),
+  ]);
 
   const ratingCount = items.filter((it) => it.rating).length;
   const reviewCount = items.filter((it) => it.review).length;
@@ -132,6 +135,40 @@ export default async function ProfilPage() {
             </li>
           ))}
         </ul>
+      )}
+
+      {followed.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold tracking-tight">Obserwowane kursy</h2>
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {followed.map((c) => (
+              <li key={c.id}>
+                <Link
+                  href={`/kursy/${c.slug}`}
+                  className="flex items-center gap-3 rounded-lg border border-border bg-card p-3 hover:border-foreground/40"
+                >
+                  <div className="relative size-12 shrink-0 overflow-hidden rounded bg-muted">
+                    {c.coverUrl ? (
+                      <Image src={c.coverUrl} alt="" fill sizes="48px" className="object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-muted-foreground/40">
+                        {c.title.charAt(0)}
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium">{c.title}</div>
+                    <div className="text-xs text-muted-foreground tabular-nums">
+                      {c.avgOverall !== null
+                        ? `${c.avgOverall.toFixed(1)}/10 · ${c.ratingsCount} ${pluralPl(c.ratingsCount, ["ocena", "oceny", "ocen"])}`
+                        : "Brak ocen"}
+                    </div>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       <section className="space-y-3 rounded-lg border border-border p-5">

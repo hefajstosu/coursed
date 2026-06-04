@@ -2,7 +2,8 @@
 
 import { useTransition, useState } from "react";
 import { toast } from "sonner";
-import { setUserRole } from "@/server/actions/admin/users";
+import { useRouter } from "next/navigation";
+import { setUserRole, setUserBanned } from "@/server/actions/admin/users";
 import type { UserRole } from "@/generated/prisma/enums";
 
 const ROLES: UserRole[] = ["USER", "CRITIC", "EDITOR", "ADMIN"];
@@ -54,5 +55,48 @@ export function UserRoleSelect({
         </option>
       ))}
     </select>
+  );
+}
+
+export function BanButton({
+  userId,
+  initialBanned,
+}: {
+  userId: string;
+  initialBanned: boolean;
+}) {
+  const router = useRouter();
+  const [banned, setBanned] = useState(initialBanned);
+  const [isPending, startTransition] = useTransition();
+
+  const toggle = () => {
+    if (!banned && !confirm("Zawiesić konto? Użytkownik nie będzie mógł dodawać ocen ani opinii.")) {
+      return;
+    }
+    startTransition(async () => {
+      const res = await setUserBanned({ userId, banned: !banned });
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      setBanned(!banned);
+      toast.success(!banned ? "Konto zawieszone." : "Konto odwieszone.");
+      router.refresh();
+    });
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      disabled={isPending}
+      className={`rounded-md border px-2 py-1 text-xs transition-colors disabled:opacity-50 ${
+        banned
+          ? "border-destructive/40 bg-destructive/10 text-destructive"
+          : "border-input text-muted-foreground hover:bg-muted"
+      }`}
+    >
+      {banned ? "Zawieszony — przywróć" : "Zawieś"}
+    </button>
   );
 }

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { listAdminCourses } from "@/server/queries/admin";
+import { FeaturedToggle } from "@/components/admin/FeaturedToggle";
 import { formatLabels, pluralPl } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Kursy" };
@@ -98,6 +99,7 @@ export default async function AdminCoursesPage({
                 <Th>Forma</Th>
                 <Th>Ocena</Th>
                 <Th>Opinie</Th>
+                <Th>Polecane</Th>
                 <Th>Zaktualizowany</Th>
               </tr>
             </thead>
@@ -118,6 +120,9 @@ export default async function AdminCoursesPage({
                     {c.avgOverall !== null ? `${c.avgOverall.toFixed(1)} / 10` : "—"}
                   </Td>
                   <Td className="tabular-nums text-xs">{c._count.reviews}</Td>
+                  <Td>
+                    <FeaturedToggle courseId={c.id} initial={c.featured} />
+                  </Td>
                   <Td className="text-xs text-muted-foreground">{dateFmt.format(c.updatedAt)}</Td>
                 </tr>
               ))}
