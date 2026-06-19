@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 
-// UWAGA: dokument jest rzetelnym szablonem zgodnym z RODO, ale przed publikacją
-// powinien zostać uzupełniony danymi operatora ([NAZWA/ADRES/EMAIL]) oraz
-// zweryfikowany przez prawnika. Placeholdery oznaczono nawiasami [ ].
+// UWAGA: dokument jest rzetelnym szablonem zgodnym z RODO. Dane operatora są
+// uzupełnione; przed publicznym ogłoszeniem warto zweryfikować całość u prawnika.
 
 export const metadata: Metadata = {
   title: "Polityka prywatności",
@@ -66,7 +65,8 @@ export default function PolitykaPrywatnosciPage() {
         <Section id="administrator" title="Administrator danych">
           <p>
             Administratorem danych osobowych jest operator serwisu coursed.pl —
-            [NAZWA OPERATORA], [ADRES], NIP [NIP]. W sprawach dotyczących danych
+            1000 Miast Tomasz Wilkosz, pl. Grodnicki 1, 70-210 Szczecin, NIP
+            9551896675, REGON 811690936. W sprawach dotyczących danych
             osobowych możesz kontaktować się pod adresem{" "}
             <a href={`mailto:${CONTACT_EMAIL}`} className="underline underline-offset-4 hover:text-foreground">
               {CONTACT_EMAIL}

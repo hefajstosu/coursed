@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
-// UWAGA: rzetelny szablon regulaminu — przed publikacją uzupełnij dane operatora
-// ([NAZWA/ADRES/EMAIL]) i zweryfikuj u prawnika. Placeholdery w nawiasach [ ].
+// UWAGA: rzetelny szablon regulaminu. Dane operatora są uzupełnione; przed
+// publicznym ogłoszeniem warto zweryfikować całość u prawnika.
 
 export const metadata: Metadata = {
   title: "Regulamin",
@@ -69,7 +69,8 @@ export default function RegulaminPage() {
               umożliwiająca przeglądanie kursów oraz publikację ocen i opinii.
             </li>
             <li>
-              <strong>Operator</strong> — [NAZWA OPERATORA], [ADRES], NIP [NIP].
+              <strong>Operator</strong> — 1000 Miast Tomasz Wilkosz, pl. Grodnicki 1,
+              70-210 Szczecin, NIP 9551896675, REGON 811690936.
             </li>
             <li>
               <strong>Użytkownik</strong> — osoba korzystająca z Serwisu,
