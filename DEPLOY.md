@@ -70,7 +70,11 @@ Status: zaznaczaj `[x]` po wykonaniu.
 - [x] DNS rozpropagowany (potwierdzone na 8.8.8.8 / 1.1.1.1 / OVH auth). HTTPS 200 + ważny SSL.
 - [ ] Follow-up (opcjonalnie): przekierowanie `www.coursed.pl` → `coursed.pl`.
 
-## KROK 10 — Pierwszy administrator
+## KROK 10 — Pierwszy administrator ✅
+- [x] Zalogowano (magic-link + Google). Konto podniesione do ADMIN przez Neon SQL Editor. `/admin` dostępny.
+- [x] Fix: `allowDangerousEmailAccountLinking` na Google (commit „auth change") — logowanie Google na konto z magic-linku działa.
+
+### (oryginalna instrukcja)
 Logowanie przez Google tworzy konto z rolą `USER`. Trzeba ręcznie nadać sobie `ADMIN`:
 - [ ] Zaloguj się na produkcji swoim docelowym adminowym mailem (Google lub magic-link).
 - [ ] Nadaj rolę ADMIN jednym ze sposobów:
@@ -79,6 +83,10 @@ Logowanie przez Google tworzy konto z rolą `USER`. Trzeba ręcznie nadać sobie
 - [ ] ⚠️ Seed (`pnpm db:seed`) to **dane demo** — NIE odpalaj na produkcji.
 
 ## KROK 11 — Smoke test po deployu
+> 🐞 Znaleziony i naprawiony w trakcie smoke testu (commit `0cb6f82`):
+> dodawanie kategorii rzucało 500 — pusty `parentId` z formularza łamał FK
+> `Category_parentId_fkey` (P2003). Schemat zod normalizuje teraz "" → undefined.
+
 - [ ] Logowanie Google działa.
 - [ ] Magic-link (e-mail z Resend) dochodzi i loguje.
 - [ ] Dodanie opinii / oceny działa.
@@ -87,9 +95,15 @@ Logowanie przez Google tworzy konto z rolą `USER`. Trzeba ręcznie nadać sobie
 - [ ] `sitemap.xml` i `robots.txt` zwracają poprawny host (`coursed.pl`).
 
 ## KROK 12 — Compliance przed ogłoszeniem (dług z poprawki.md)
-- [ ] Uzupełnij **dane operatora** (`[NAZWA/ADRES/NIP]`) w `/polityka-prywatnosci` i `/regulamin`.
-- [ ] Najlepiej: weryfikacja obu dokumentów u prawnika.
+- [x] Dane operatora uzupełnione w `/polityka-prywatnosci` i `/regulamin` (commit `99cb6c5`):
+      1000 Miast Tomasz Wilkosz, NIP 9551896675, REGON 811690936, pl. Grodnicki 1, 70-210 Szczecin.
+- [ ] Zalecane: weryfikacja obu dokumentów u prawnika.
 - [ ] Sprawdź baner cookie consent na produkcji.
+
+## KROK 13 — TODO przed publicznym ogłoszeniem
+- [x] 🔴 Reset hasła roli `neondb_owner` w Neon + podmiana `DATABASE_URL`/`DIRECT_URL` w Vercel + redeploy. Stare (zczatowane) hasło unieważnione, strona działa.
+- [ ] 🟠 Opublikuj aplikację Google OAuth (Google Cloud → „Odbiorcy" → Publish) — inaczej logują się tylko użytkownicy testowi.
+- [ ] 🟢 (opcjonalnie) przekierowanie `www.coursed.pl` → `coursed.pl`.
 
 ---
 

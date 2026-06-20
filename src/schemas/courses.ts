@@ -9,7 +9,9 @@ const aspectScore = z.number().int().min(1).max(10).nullish();
 
 export const addReviewSchema = z.object({
   courseId: z.string().min(1),
-  body: z.string().min(20, "Opinia musi mieć min. 20 znaków").max(5000),
+  // Tekst opinii opcjonalny — można wystawić samą ocenę, bez minimalnej liczby
+  // znaków. Puste/whitespace = brak opinii (obsługa w addReview).
+  body: z.string().max(5000).optional().default(""),
   value: z.number().int().min(1).max(10),
   // #9 oceny szczegółowe — opcjonalne
   valueContent: aspectScore,

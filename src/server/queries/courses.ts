@@ -290,6 +290,7 @@ export async function getCourseReviews(
   const where = {
     courseId,
     status: "VISIBLE" as const,
+    body: { not: "" }, // oceny bez tekstu nie pojawiają się jako puste opinie
     ...(kind && { kind }),
   };
 

@@ -59,10 +59,6 @@ export function ReviewForm({
       toast.error("Wybierz ocenę gwiazdkową.");
       return;
     }
-    if (body.trim().length < 20) {
-      toast.error("Opinia musi mieć min. 20 znaków.");
-      return;
-    }
     startTransition(async () => {
       const res = await addReview({
         courseId,
@@ -146,7 +142,7 @@ export function ReviewForm({
 
       <div className="space-y-1.5">
         <Label htmlFor="review-body" className="text-xs uppercase tracking-wide text-muted-foreground">
-          {initialBody ? "Twoja opinia (edytuj)" : "Twoja opinia"}
+          {initialBody ? "Twoja opinia (edytuj)" : "Twoja opinia (opcjonalnie)"}
         </Label>
         <Textarea
           id="review-body"

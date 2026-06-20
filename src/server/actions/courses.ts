@@ -83,12 +83,16 @@ export async function addReview(input: {
   try {
     const user = await requireAuthUser();
     const data = addReviewSchema.parse(input);
+    // Tekst opcjonalny: pusty/whitespace = sama ocena, bez wiersza Review.
+    const body = data.body.trim();
 
     const rl = await rateLimit(`review:${user.id}`, LIMITS.review);
     if (!rl.ok) return { ok: false, error: "Za dużo opinii w krótkim czasie. Spróbuj później." };
 
-    const heuristic = spamHeuristics(data.body);
-    if (!heuristic.ok) return { ok: false, error: heuristic.reason };
+    if (body) {
+      const heuristic = spamHeuristics(body);
+      if (!heuristic.ok) return { ok: false, error: heuristic.reason };
+    }
 
     const course = await db.course.findUnique({
       where: { id: data.courseId },
@@ -98,7 +102,7 @@ export async function addReview(input: {
       return { ok: false, error: "Kurs niedostępny." };
     }
 
-    if (await isCrossCourseDuplicate(user.id, course.id, data.body)) {
+    if (body && (await isCrossCourseDuplicate(user.id, course.id, body))) {
       return {
         ok: false,
         error: "Ta sama treść została już wystawiona przy innym kursie.",
@@ -133,18 +137,25 @@ export async function addReview(input: {
           valueWorth: data.valueWorth ?? null,
         },
       }),
-      db.review.upsert({
-        where: { courseId_userId: { courseId: course.id, userId: user.id } },
-        create: { courseId: course.id, userId: user.id, body: data.body, kind },
-        update: { body: data.body, kind },
-      }),
+      // Z tekstem → zapisz/aktualizuj opinię. Bez tekstu → usuń ewentualną
+      // wcześniejszą opinię (zostaje sama ocena).
+      body
+        ? db.review.upsert({
+            where: { courseId_userId: { courseId: course.id, userId: user.id } },
+            create: { courseId: course.id, userId: user.id, body, kind },
+            update: { body, kind },
+          })
+        : db.review.deleteMany({
+            where: { courseId: course.id, userId: user.id },
+          }),
     ]);
 
     await recomputeCourseRatings(course.id);
     revalidatePath(`/kursy/${course.slug}`);
 
-    // #11 powiadom obserwujących (poza autorem) o nowej opinii
-    if (!hadReview) {
+    // #11 powiadom obserwujących (poza autorem) o nowej opinii — tylko gdy
+    // faktycznie dodano tekst (sama ocena nie generuje powiadomień).
+    if (!hadReview && body) {
       const followers = await db.courseFollow.findMany({
         where: { courseId: course.id, userId: { not: user.id } },
         select: { user: { select: { email: true } } },

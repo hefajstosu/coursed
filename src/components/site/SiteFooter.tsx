@@ -1,7 +1,20 @@
 import Link from "next/link";
 import Image from "next/image";
+import { db } from "@/lib/db";
 
-export function SiteFooter() {
+// Ile kategorii pokazać w stopce (jeśli jest mniej, pokaże tyle, ile jest).
+const FOOTER_CATEGORIES = 4;
+
+export async function SiteFooter() {
+  // #stopka: kategorie dobierane dynamicznie (najpierw te z największą liczbą
+  // kursów), zamiast sztywno wpisanych slugów.
+  const categories = await db.category.findMany({
+    where: { parentId: null },
+    orderBy: [{ courses: { _count: "desc" } }, { name: "asc" }],
+    take: FOOTER_CATEGORIES,
+    select: { slug: true, name: true },
+  });
+
   return (
     <footer className="mt-16 border-t border-border bg-muted/30">
       <div className="mx-auto max-w-6xl px-4 py-10 grid gap-6 md:grid-cols-4 text-sm">
@@ -30,21 +43,13 @@ export function SiteFooter() {
                 Kategorie
               </Link>
             </li>
-            <li>
-              <Link href="/kategoria/programowanie" className="hover:text-foreground">
-                Programowanie
-              </Link>
-            </li>
-            <li>
-              <Link href="/kategoria/biznes" className="hover:text-foreground">
-                Biznes
-              </Link>
-            </li>
-            <li>
-              <Link href="/kategoria/jezyki" className="hover:text-foreground">
-                Języki
-              </Link>
-            </li>
+            {categories.map((c) => (
+              <li key={c.slug}>
+                <Link href={`/kategoria/${c.slug}`} className="hover:text-foreground">
+                  {c.name}
+                </Link>
+              </li>
+            ))}
           </ul>
         </div>
         <div>
