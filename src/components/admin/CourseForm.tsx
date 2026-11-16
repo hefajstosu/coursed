@@ -147,7 +147,7 @@ export function CourseForm({
           type="url"
           defaultValue={defaults.coverUrl}
           error={state.fieldErrors?.coverUrl}
-          hint="Wklej link do obrazu (jpg/png/webp). Upload do Blob dodamy później."
+          hint="Wklej link do obrazu (jpg/png/webp). Dozwolone hosty: images.unsplash.com (next.config.ts)."
           disabled={pending}
         />
       </Section>
