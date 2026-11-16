@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { signIn, signOut } from "@/auth";
+import { safeRedirectPath } from "@/lib/safe-redirect";
 
 const SESSION_COOKIE = "authjs.session-token";
 const SESSION_TTL_DAYS = 30;
@@ -43,20 +44,13 @@ export async function devSignInAs(formData: FormData) {
   redirect("/");
 }
 
-/** Akceptuje tylko ścieżki wewnętrzne — ochrona przed open-redirect. */
-function safeNext(value: FormDataEntryValue | null): string {
-  const v = typeof value === "string" ? value : "";
-  if (v.startsWith("/") && !v.startsWith("//") && !v.startsWith("/\\")) return v;
-  return "/";
-}
-
 export async function signInWithGoogle(formData: FormData) {
-  await signIn("google", { redirectTo: safeNext(formData.get("next")) });
+  await signIn("google", { redirectTo: safeRedirectPath(formData.get("next")) });
 }
 
 export async function signInWithMagicLink(formData: FormData) {
   const email = z.string().email().parse(formData.get("email"));
-  await signIn("resend", { email, redirectTo: safeNext(formData.get("next")) });
+  await signIn("resend", { email, redirectTo: safeRedirectPath(formData.get("next")) });
 }
 
 export async function logOut() {

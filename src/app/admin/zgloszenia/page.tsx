@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { CourseRequestActions } from "@/components/admin/CourseRequestActions";
+import { requireRole } from "@/lib/auth-helpers";
 
 export const metadata: Metadata = { title: "Zgłoszenia kursów" };
 export const dynamic = "force-dynamic";
@@ -19,6 +20,7 @@ export default async function CourseRequestsPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  await requireRole("ADMIN", "EDITOR");
   const sp = await searchParams;
   const status = (typeof sp.status === "string" ? sp.status : "NEW") as
     | "NEW"

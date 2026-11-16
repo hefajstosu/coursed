@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { safeRedirectPath } from "@/lib/safe-redirect";
 import {
   signInWithGoogle,
   signInWithMagicLink,
@@ -15,14 +16,23 @@ export const metadata: Metadata = {
   title: "Zaloguj się",
 };
 
+// Kody błędów Auth.js (`pages.error` → /login?error=…) + własny RateLimited.
+const ERROR_MESSAGES: Record<string, string> = {
+  RateLimited: "Wysłano zbyt wiele linków logowania. Spróbuj ponownie za godzinę.",
+  Verification: "Link logowania wygasł lub został już użyty. Wyślij nowy.",
+  AccessDenied: "Odmowa dostępu.",
+  OAuthAccountNotLinked: "Ten e-mail jest już powiązany z inną metodą logowania.",
+};
+const DEFAULT_ERROR = "Nie udało się zalogować. Spróbuj ponownie.";
+
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string }>;
+  searchParams: Promise<{ next?: string; error?: string }>;
 }) {
-  const { next } = await searchParams;
-  const safeNextPath =
-    next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
+  const { next, error } = await searchParams;
+  const safeNextPath = safeRedirectPath(next);
+  const errorMessage = error ? (ERROR_MESSAGES[error] ?? DEFAULT_ERROR) : null;
 
   const session = await auth();
   if (session?.user) redirect(safeNextPath);
@@ -46,6 +56,15 @@ export default async function LoginPage({
           Po zalogowaniu możesz oceniać kursy i dodawać opinie.
         </p>
       </header>
+
+      {errorMessage && (
+        <p
+          role="alert"
+          className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+        >
+          {errorMessage}
+        </p>
+      )}
 
       <div className="space-y-4 rounded-lg border border-border bg-card p-6">
         {hasGoogle ? (

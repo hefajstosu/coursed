@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { requireRole } from "@/lib/auth-helpers";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard() {
+  await requireRole("ADMIN", "EDITOR");
   const [
     coursesPublished,
     coursesDraft,

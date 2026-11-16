@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { ClaimActions } from "@/components/admin/ClaimActions";
+import { requireRole } from "@/lib/auth-helpers";
 
 export const metadata: Metadata = { title: "Przejęcia listingów" };
 export const dynamic = "force-dynamic";
@@ -19,6 +20,7 @@ export default async function AdminClaimsPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  await requireRole("ADMIN", "EDITOR");
   const sp = await searchParams;
   const status =
     typeof sp.status === "string" && TABS.some((t) => t.value === sp.status)

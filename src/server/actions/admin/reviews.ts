@@ -14,6 +14,7 @@ async function ensureCanRespond(
 ): Promise<{ ok: true; userId: string; slug: string } | { ok: false; error: string }> {
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Musisz być zalogowany." };
+  if (session.user.banned) return { ok: false, error: "Twoje konto zostało zawieszone." };
   const review = await db.review.findUnique({
     where: { id: reviewId },
     select: { course: { select: { slug: true, ownerId: true } } },

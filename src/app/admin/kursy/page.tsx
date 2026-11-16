@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { listAdminCourses } from "@/server/queries/admin";
 import { FeaturedToggle } from "@/components/admin/FeaturedToggle";
 import { formatLabels, pluralPl } from "@/lib/format";
+import { requireRole } from "@/lib/auth-helpers";
 
 export const metadata: Metadata = { title: "Kursy" };
 export const dynamic = "force-dynamic";
@@ -15,6 +16,7 @@ export default async function AdminCoursesPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  await requireRole("ADMIN", "EDITOR");
   const sp = await searchParams;
   const status = typeof sp.status === "string" ? sp.status : undefined;
   const q = typeof sp.q === "string" ? sp.q.trim() : "";

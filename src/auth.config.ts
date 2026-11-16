@@ -12,5 +12,6 @@ export default {
   pages: {
     signIn: "/login",
     verifyRequest: "/login/sprawdz-email",
+    error: "/login",
   },
 } satisfies NextAuthConfig;

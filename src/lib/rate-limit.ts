@@ -91,4 +91,6 @@ export const LIMITS = {
   vote: { limit: 60, windowMs: 60 * 60 * 1000 }, // 60/h
   report: { limit: 10, windowMs: 24 * 60 * 60 * 1000 }, // 10/dzień
   courseRequest: { limit: 5, windowMs: 24 * 60 * 60 * 1000 }, // 5/dzień
+  magicLinkEmail: { limit: 5, windowMs: 60 * 60 * 1000 }, // 5/h na adres e-mail
+  magicLinkIp: { limit: 20, windowMs: 60 * 60 * 1000 }, // 20/h na IP
 } as const;

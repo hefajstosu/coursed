@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/db";
+import { requireRole } from "@/lib/auth-helpers";
 
 export const metadata: Metadata = { title: "Blog" };
 export const dynamic = "force-dynamic";
@@ -19,6 +20,7 @@ export default async function AdminBlogPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  await requireRole("ADMIN", "EDITOR");
   const sp = await searchParams;
   const status = typeof sp.status === "string" ? sp.status : undefined;
 

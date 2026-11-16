@@ -3,6 +3,7 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { ReviewStatusActions, ReportActions, VerifyButton } from "@/components/admin/ReviewActions";
 import { kindLabels } from "@/lib/format";
+import { requireRole } from "@/lib/auth-helpers";
 
 export const metadata: Metadata = { title: "Opinie" };
 export const dynamic = "force-dynamic";
@@ -28,6 +29,7 @@ export default async function AdminReviewsPage({
 }: {
   searchParams: Promise<Search>;
 }) {
+  await requireRole("ADMIN", "EDITOR");
   const sp = await searchParams;
   const tab = typeof sp.tab === "string" && sp.tab === "reports" ? "reports" : "reviews";
   const status = typeof sp.status === "string" ? sp.status : undefined;

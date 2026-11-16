@@ -1,8 +1,8 @@
 "use server";
 
-import { headers } from "next/headers";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { clientIp } from "@/lib/client-ip";
 import { rateLimit, LIMITS } from "@/lib/rate-limit";
 import { courseRequestSchema } from "@/schemas/requests";
 
@@ -13,10 +13,7 @@ export type CourseRequestState = {
 };
 
 async function clientKey() {
-  const h = await headers();
-  const fwd = h.get("x-forwarded-for");
-  const ip = fwd?.split(",")[0]?.trim() || h.get("x-real-ip") || "anon";
-  return `course-request:${ip}`;
+  return `course-request:${await clientIp()}`;
 }
 
 export async function submitCourseRequest(

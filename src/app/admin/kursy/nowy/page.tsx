@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { CourseForm, type CourseFormDefaults } from "@/components/admin/CourseForm";
 import { listFlatCategories } from "@/server/queries/admin";
+import { requireRole } from "@/lib/auth-helpers";
 
 export const metadata: Metadata = { title: "Nowy kurs" };
 export const dynamic = "force-dynamic";
@@ -25,6 +26,7 @@ const empty: CourseFormDefaults = {
 };
 
 export default async function NewCoursePage() {
+  await requireRole("ADMIN", "EDITOR");
   const categories = await listFlatCategories();
   return (
     <div className="space-y-6">

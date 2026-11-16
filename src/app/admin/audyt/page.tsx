@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { pluralPl } from "@/lib/format";
+import { requireRole } from "@/lib/auth-helpers";
 
 export const metadata: Metadata = { title: "Audit log" };
 export const dynamic = "force-dynamic";
@@ -59,6 +60,7 @@ export default async function AuditLogPage({
 }: {
   searchParams: Promise<Search>;
 }) {
+  await requireRole("ADMIN", "EDITOR");
   const sp = await searchParams;
   const entity = getStr(sp, "entity");
   const action = getStr(sp, "action");
